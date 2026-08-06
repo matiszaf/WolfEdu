@@ -58,7 +58,7 @@ jobs:
       - name: Udostępnij podpisane APK
         uses: actions/upload-artifact@v4
         with:
-          name: MojDziennik-podpisany-2.1.1
+          name: MojDziennik-podpisany-2.2.0
           path: app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
           retention-days: 30
