@@ -1,15 +1,15 @@
 plugins { id 'com.android.application' }
 
 android {
-    namespace 'pl.xwolfik.mojdziennik'
+    namespace 'pl.wolfedu.app'
     compileSdk 35
 
     defaultConfig {
-        applicationId 'pl.xwolfik.mojdziennik'
+        applicationId 'pl.wolfedu.app'
         minSdk 24
         targetSdk 35
-        versionCode 5
-        versionName '2.2.0'
+        versionCode 6
+        versionName '3.0.0'
     }
 
     signingConfigs {

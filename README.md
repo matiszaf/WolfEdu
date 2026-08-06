@@ -1,12 +1,11 @@
-# Mój Dziennik 2.2.0
+# WolfEdu 3.0
 
-Nowości:
-- moduł zadań domowych, sprawdzianów, kartkówek i projektów,
-- terminy, priorytety, notatki oraz przedmioty,
-- oznaczanie jako wykonane i przywracanie,
-- filtrowanie aktywnych, ukończonych i wszystkich terminów,
-- ostrzeganie o terminach po czasie,
-- najbliższe terminy na ekranie głównym,
-- podpisane APK release przez GitHub Actions.
+Darmowy, polski dziennik szkolny na Androida.
 
-Artefakt GitHub Actions: `MojDziennik-podpisany-2.2.0`.
+## Wersja 3.0
+- pełny rebranding na WolfEdu,
+- pakiet Android: `pl.wolfedu.app`,
+- nowa ikona i ekran startowy,
+- nowa granatowo-niebieska identyfikacja,
+- zachowane moduły ocen, zadań, planu, frekwencji i klas,
+- podpisany build release przez GitHub Actions.
