@@ -3,7 +3,7 @@ name: Zbuduj APK
 on:
   workflow_dispatch:
   push:
-    branches: [ "main", "master" ]
+    branches: [ "main", "master", "develop", "feature/**" ]
 
 permissions:
   contents: read

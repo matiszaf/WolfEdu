@@ -18,3 +18,11 @@ Darmowy, lokalny dziennik szkolny po polsku.
 4. Plik znajdziesz w `app/build/outputs/apk/debug/app-debug.apk`.
 
 Projekt używa Android Gradle Plugin 8.13.2, Java 17 i nie wymaga zewnętrznych bibliotek.
+
+## Wersja 2.0.0
+- nowy ekran główny z szybkimi skrótami,
+- podsumowanie ocen i frekwencji,
+- najbliższa lekcja na dziś,
+- tryb ciemny,
+- zachowanie danych z wersji 1.0,
+- automatyczne buildy także dla `develop` i `feature/**`.
