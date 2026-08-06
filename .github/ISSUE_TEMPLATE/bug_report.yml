@@ -1,0 +1,38 @@
+name: Zgłoszenie błędu
+description: Zgłoś problem w aplikacji WolfEdu
+title: "[BUG] "
+labels: ["bug", "do sprawdzenia"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Opis błędu
+      description: Co dokładnie nie działa?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Kroki odtworzenia
+      placeholder: |
+        1. Otwórz...
+        2. Kliknij...
+        3. Pojawia się...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Wersja WolfEdu
+      placeholder: 3.0.0
+    validations:
+      required: true
+  - type: dropdown
+    id: android
+    attributes:
+      label: Wersja Androida
+      options: ["Android 12 lub starszy", "Android 13", "Android 14", "Android 15", "Android 16", "Inna"]
+  - type: textarea
+    id: expected
+    attributes:
+      label: Oczekiwane działanie

@@ -1,0 +1,27 @@
+name: Propozycja funkcji
+description: Zaproponuj nową funkcję dla WolfEdu
+title: "[FUNKCJA] "
+labels: ["nowa funkcja", "do zaplanowania"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Jaki problem rozwiązuje ta funkcja?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proponowane rozwiązanie
+    validations:
+      required: true
+  - type: dropdown
+    id: module
+    attributes:
+      label: Moduł
+      options: ["Dashboard", "Oceny", "Plan lekcji", "Frekwencja", "Zadania", "Profil", "Ustawienia", "Synchronizacja", "Inny"]
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priorytet
+      options: ["Niski", "Średni", "Wysoki", "Krytyczny"]
