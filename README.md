@@ -1,18 +1,29 @@
-# WolfEdu 3.0
+# WolfEdu 4.0 — Sync Beta
 
-Darmowy, polski dziennik szkolny na Androida.
+WolfEdu to polski dziennik szkolny na Androida z ocenami, wagami, frekwencją, planem lekcji, zadaniami i synchronizacją między urządzeniami.
 
-## Wersja 3.0
-- pełny rebranding na WolfEdu,
-- pakiet Android: `pl.wolfedu.app`,
-- nowa ikona i ekran startowy,
-- nowa granatowo-niebieska identyfikacja,
-- zachowane moduły ocen, zadań, planu, frekwencji i klas,
-- podpisany build release przez GitHub Actions.
+## Nowości 4.0
 
-## Zarządzanie projektem
+- konto e-mail i hasło przez Firebase Authentication,
+- synchronizacja kompletnego dziennika w Cloud Firestore,
+- automatyczne wysyłanie zmian,
+- pobieranie nowszej kopii na drugim urządzeniu,
+- status synchronizacji w nagłówku,
+- działanie lokalne przy braku internetu,
+- bezpieczne dane oddzielone według UID użytkownika.
 
-- Plan rozwoju: [`ROADMAP.md`](ROADMAP.md)
-- Historia zmian: [`CHANGELOG.md`](CHANGELOG.md)
-- Zasady współtworzenia: [`CONTRIBUTING.md`](CONTRIBUTING.md)
-- Instrukcja tablicy GitHub: [`GITHUB-PROJECT-INSTRUKCJA.md`](GITHUB-PROJECT-INSTRUKCJA.md)
+Konfiguracja Firebase znajduje się w pliku `FIREBASE-INSTRUKCJA.md`.
+
+## Budowanie
+
+GitHub Actions wymaga dotychczasowych sekretów podpisu oraz nowego sekretu:
+
+```text
+GOOGLE_SERVICES_JSON_BASE64
+```
+
+Artefakt wynikowy:
+
+```text
+WolfEdu-podpisany-4.0.0-Sync/app-release.apk
+```

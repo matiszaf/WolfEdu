@@ -1,4 +1,19 @@
 # Changelog
+## [4.0.0] — Sync Beta
+
+### Dodano
+- Firebase Authentication: rejestracja i logowanie e-mail/hasło.
+- Cloud Firestore do synchronizacji danych między urządzeniami.
+- Automatyczny zapis zmian do chmury.
+- Pobieranie nowszej kopii danych w czasie rzeczywistym.
+- Status synchronizacji w nagłówku i ustawieniach.
+- GitHub Secret `GOOGLE_SERVICES_JSON_BASE64`.
+- Reguły Firestore ograniczające dostęp do właściciela konta.
+
+### Architektura
+- Natywny most JavaScript–Firebase w `FirebaseSyncBridge.java`.
+- Lokalne dane pozostają źródłem działania offline.
+
 
 ## [3.0.0]
 - Rebranding aplikacji na WolfEdu

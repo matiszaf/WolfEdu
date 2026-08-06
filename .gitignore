@@ -1,0 +1,3 @@
+
+# Firebase config is supplied by GitHub Actions secret
+app/google-services.json
