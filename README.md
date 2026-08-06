@@ -26,3 +26,14 @@ Projekt używa Android Gradle Plugin 8.13.2, Java 17 i nie wymaga zewnętrznych 
 - tryb ciemny,
 - zachowanie danych z wersji 1.0,
 - automatyczne buildy także dla `develop` i `feature/**`.
+
+## Podpisane aktualizacje
+
+Projekt buduje teraz podpisane `app-release.apk` przy użyciu czterech sekretów GitHub Actions:
+
+- `KEYSTORE_BASE64`
+- `KEYSTORE_PASSWORD`
+- `KEY_ALIAS`
+- `KEY_PASSWORD`
+
+Pierwsze przejście ze starego APK debug na APK release wymaga jednorazowego odinstalowania starej aplikacji. Każda kolejna wersja podpisana tym samym kluczem instaluje się już jako zwykła aktualizacja.
