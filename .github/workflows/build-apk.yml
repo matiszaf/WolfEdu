@@ -1,9 +1,11 @@
-name: Zbuduj APK
+name: WolfEdu CI
 
 on:
   workflow_dispatch:
   push:
-    branches: [ "main", "master" ]
+    branches:
+      - main
+      - develop
 
 permissions:
   contents: read
@@ -34,7 +36,7 @@ jobs:
       - name: Udostępnij gotowe APK
         uses: actions/upload-artifact@v4
         with:
-          name: MojDziennik-APK
+          name: WolfEdu-APK
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 30
