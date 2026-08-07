@@ -41,6 +41,9 @@ public final class FirebaseSyncBridge {
     private ListenerRegistration tasksListener;
     private ListenerRegistration attendanceListener;
     private ListenerRegistration timetableListener;
+    private ListenerRegistration membersDirectoryListener;
+    private ListenerRegistration schoolInvitesListener;
+    private ListenerRegistration personalInvitesListener;
 
     private String activeSchoolId = "";
     private String activeSchoolName = "";
@@ -54,6 +57,9 @@ public final class FirebaseSyncBridge {
     private JSONArray schoolAttendance = new JSONArray();
     private JSONArray schoolTimetable = new JSONArray();
     private JSONArray availableSchools = new JSONArray();
+    private JSONArray schoolMembers = new JSONArray();
+    private JSONArray schoolInvites = new JSONArray();
+    private JSONArray myInvites = new JSONArray();
 
     public FirebaseSyncBridge(WebView webView) {
         this.webView = webView;
@@ -410,6 +416,136 @@ public final class FirebaseSyncBridge {
                 .addOnFailureListener(error -> emitSchoolError(friendly(error.getMessage())));
     }
 
+    private boolean isAdminRole() {
+        String role = activeRole == null ? "" : activeRole.toLowerCase();
+        return role.equals("owner") || role.equals("admin") || role.equals("director");
+    }
+
+    @JavascriptInterface
+    public void inviteSchoolMember(String email, String role) {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null || !hasActiveSchool() || !isAdminRole()) return;
+
+        String cleanEmail = email == null ? "" : email.trim();
+        String cleanRole = role == null ? "" : role.trim().toLowerCase();
+        if (cleanEmail.isEmpty() || !(cleanRole.equals("admin") || cleanRole.equals("director")
+                || cleanRole.equals("teacher") || cleanRole.equals("parent") || cleanRole.equals("student"))) {
+            emitSchoolError("Wpisz poprawny e-mail i wybierz rolę.");
+            return;
+        }
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("schoolId", activeSchoolId);
+        payload.put("schoolName", activeSchoolName);
+        payload.put("email", cleanEmail);
+        payload.put("role", cleanRole);
+        payload.put("createdBy", user.getUid());
+        payload.put("createdAt", FieldValue.serverTimestamp());
+
+        firestore.collection("schoolInvites").add(payload)
+                .addOnSuccessListener(ref -> emitStatus("Zaproszenie wysłane", cleanEmail + " · " + cleanRole, "online"))
+                .addOnFailureListener(error -> emitSchoolError(friendly(error.getMessage())));
+    }
+
+    @JavascriptInterface
+    public void cancelSchoolInvite(String inviteId) {
+        if (!isAdminRole() || inviteId == null || inviteId.isBlank()) return;
+        firestore.collection("schoolInvites").document(inviteId).delete()
+                .addOnFailureListener(error -> emitSchoolError(friendly(error.getMessage())));
+    }
+
+    @JavascriptInterface
+    public void acceptSchoolInvite(String inviteId) {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null || inviteId == null || inviteId.isBlank()) return;
+
+        DocumentReference inviteRef = firestore.collection("schoolInvites").document(inviteId);
+        inviteRef.get().addOnSuccessListener(invite -> {
+            if (!invite.exists()) {
+                emitSchoolError("Zaproszenie już nie istnieje.");
+                return;
+            }
+
+            String email = value(invite.getString("email"));
+            String userEmail = value(user.getEmail());
+            if (!email.equalsIgnoreCase(userEmail)) {
+                emitSchoolError("To zaproszenie jest przypisane do innego adresu e-mail.");
+                return;
+            }
+
+            String schoolId = value(invite.getString("schoolId"));
+            String role = value(invite.getString("role"));
+            if (schoolId.isBlank() || role.isBlank()) {
+                emitSchoolError("Zaproszenie jest nieprawidłowe.");
+                return;
+            }
+
+            Map<String, Object> member = new HashMap<>();
+            member.put("uid", user.getUid());
+            member.put("email", userEmail);
+            member.put("role", role);
+            member.put("inviteId", inviteId);
+            member.put("joinedAt", FieldValue.serverTimestamp());
+
+            firestore.collection("schools").document(schoolId).collection("members").document(user.getUid())
+                    .set(member)
+                    .addOnSuccessListener(done -> {
+                        Map<String, Object> profile = new HashMap<>();
+                        profile.put("activeSchoolId", schoolId);
+                        firestore.collection("users").document(user.getUid()).set(profile, SetOptions.merge())
+                                .addOnSuccessListener(profileDone -> inviteRef.delete()
+                                        .addOnSuccessListener(deleted -> {
+                                            emitStatus("Dołączono do szkoły", value(invite.getString("schoolName")), "online");
+                                            loadAvailableSchools(user);
+                                        })
+                                        .addOnFailureListener(error -> emitSchoolError(friendly(error.getMessage()))))
+                                .addOnFailureListener(error -> emitSchoolError(friendly(error.getMessage())));
+                    })
+                    .addOnFailureListener(error -> emitSchoolError(friendly(error.getMessage())));
+        }).addOnFailureListener(error -> emitSchoolError(friendly(error.getMessage())));
+    }
+
+    @JavascriptInterface
+    public void rejectSchoolInvite(String inviteId) {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null || inviteId == null || inviteId.isBlank()) return;
+        firestore.collection("schoolInvites").document(inviteId).delete()
+                .addOnFailureListener(error -> emitSchoolError(friendly(error.getMessage())));
+    }
+
+    @JavascriptInterface
+    public void changeMemberRole(String uid, String role) {
+        if (!hasActiveSchool() || !isAdminRole() || uid == null || uid.isBlank()) return;
+        String cleanRole = role == null ? "" : role.trim().toLowerCase();
+        if (!(cleanRole.equals("admin") || cleanRole.equals("director") || cleanRole.equals("teacher")
+                || cleanRole.equals("parent") || cleanRole.equals("student"))) return;
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("role", cleanRole);
+        payload.put("updatedAt", FieldValue.serverTimestamp());
+        FirebaseUser user = auth.getCurrentUser();
+        if (user != null) payload.put("updatedBy", user.getUid());
+
+        firestore.collection("schools").document(activeSchoolId).collection("members").document(uid)
+                .set(payload, SetOptions.merge())
+                .addOnFailureListener(error -> emitSchoolError(friendly(error.getMessage())));
+    }
+
+    @JavascriptInterface
+    public void removeSchoolMember(String uid) {
+        if (!hasActiveSchool() || !isAdminRole() || uid == null || uid.isBlank()) return;
+        firestore.collection("schools").document(activeSchoolId).get()
+                .addOnSuccessListener(school -> {
+                    if (uid.equals(value(school.getString("ownerUid")))) {
+                        emitSchoolError("Nie można usunąć właściciela szkoły.");
+                        return;
+                    }
+                    firestore.collection("schools").document(activeSchoolId).collection("members").document(uid).delete()
+                            .addOnFailureListener(error -> emitSchoolError(friendly(error.getMessage())));
+                })
+                .addOnFailureListener(error -> emitSchoolError(friendly(error.getMessage())));
+    }
+
     @JavascriptInterface
     public void setActiveSchool(String schoolId) {
         FirebaseUser user = auth.getCurrentUser();
@@ -443,6 +579,7 @@ public final class FirebaseSyncBridge {
     private void startSchoolSync(FirebaseUser user) {
         stopSchoolListeners();
         loadAvailableSchools(user);
+        attachPersonalInvitesListener(user);
 
         profileListener = firestore.collection("users").document(user.getUid())
                 .addSnapshotListener((snapshot, error) -> {
@@ -506,6 +643,8 @@ public final class FirebaseSyncBridge {
         schoolTasks = new JSONArray();
         schoolAttendance = new JSONArray();
         schoolTimetable = new JSONArray();
+        schoolMembers = new JSONArray();
+        schoolInvites = new JSONArray();
 
         if (activeSchoolId.isBlank()) {
             emitSchoolState();
@@ -519,6 +658,7 @@ public final class FirebaseSyncBridge {
             if (snapshot != null && snapshot.exists() && user.getUid().equals(snapshot.getString("ownerUid"))) {
                 activeRole = "owner";
             }
+            refreshAdminListeners(user, schoolRef);
             loadAvailableSchools(user);
             emitSchoolState();
         });
@@ -528,6 +668,7 @@ public final class FirebaseSyncBridge {
                 String role = snapshot.getString("role");
                 if (role != null && !role.isBlank()) activeRole = role;
             }
+            refreshAdminListeners(user, schoolRef);
             emitSchoolState();
         });
 
@@ -619,6 +760,69 @@ public final class FirebaseSyncBridge {
         });
     }
 
+    private void attachPersonalInvitesListener(FirebaseUser user) {
+        if (personalInvitesListener != null) {
+            personalInvitesListener.remove();
+            personalInvitesListener = null;
+        }
+        String email = value(user.getEmail());
+        if (email.isBlank()) {
+            myInvites = new JSONArray();
+            emitSchoolState();
+            return;
+        }
+
+        personalInvitesListener = firestore.collection("schoolInvites").whereEqualTo("email", email)
+                .addSnapshotListener((snapshot, error) -> {
+                    if (error != null) {
+                        emitSchoolError(friendly(error.getMessage()));
+                        return;
+                    }
+                    myInvites = snapshotToJson(snapshot == null ? java.util.Collections.emptyList() : snapshot.getDocuments(),
+                            new String[]{"schoolId", "schoolName", "email", "role"});
+                    emitSchoolState();
+                });
+    }
+
+    private void refreshAdminListeners(FirebaseUser user, DocumentReference schoolRef) {
+        if (!isAdminRole()) {
+            stopAdminListeners();
+            schoolMembers = new JSONArray();
+            schoolInvites = new JSONArray();
+            return;
+        }
+
+        if (membersDirectoryListener == null) {
+            membersDirectoryListener = schoolRef.collection("members").addSnapshotListener((snapshot, error) -> {
+                if (error != null) { emitSchoolError(friendly(error.getMessage())); return; }
+                schoolMembers = snapshotToJson(snapshot == null ? java.util.Collections.emptyList() : snapshot.getDocuments(),
+                        new String[]{"uid", "email", "role", "inviteId"});
+                emitSchoolState();
+            });
+        }
+
+        if (schoolInvitesListener == null) {
+            schoolInvitesListener = firestore.collection("schoolInvites").whereEqualTo("schoolId", activeSchoolId)
+                    .addSnapshotListener((snapshot, error) -> {
+                        if (error != null) { emitSchoolError(friendly(error.getMessage())); return; }
+                        schoolInvites = snapshotToJson(snapshot == null ? java.util.Collections.emptyList() : snapshot.getDocuments(),
+                                new String[]{"schoolId", "schoolName", "email", "role"});
+                        emitSchoolState();
+                    });
+        }
+    }
+
+    private void stopAdminListeners() {
+        if (membersDirectoryListener != null) {
+            membersDirectoryListener.remove();
+            membersDirectoryListener = null;
+        }
+        if (schoolInvitesListener != null) {
+            schoolInvitesListener.remove();
+            schoolInvitesListener = null;
+        }
+    }
+
     private JSONArray snapshotToJson(List<DocumentSnapshot> docs, String[] fields) {
         JSONArray array = new JSONArray();
         for (DocumentSnapshot doc : docs) {
@@ -650,6 +854,9 @@ public final class FirebaseSyncBridge {
             payload.put("tasks", schoolTasks);
             payload.put("attendance", schoolAttendance);
             payload.put("timetable", schoolTimetable);
+            payload.put("members", schoolMembers);
+            payload.put("invites", schoolInvites);
+            payload.put("myInvites", myInvites);
         } catch (Exception ignored) {}
         call("window.wolfSchoolData(" + payload.toString() + ")");
     }
@@ -669,6 +876,7 @@ public final class FirebaseSyncBridge {
         ListenerRegistration[] regs = {schoolListener, memberListener, classesListener, subjectsListener, teachersListener, studentsListener, gradesListener, tasksListener, attendanceListener, timetableListener};
         for (ListenerRegistration reg : regs) if (reg != null) reg.remove();
         schoolListener = memberListener = classesListener = subjectsListener = teachersListener = studentsListener = gradesListener = tasksListener = attendanceListener = timetableListener = null;
+        stopAdminListeners();
     }
 
     private void stopSchoolListeners() {
@@ -677,6 +885,8 @@ public final class FirebaseSyncBridge {
             profileListener = null;
         }
         stopActiveSchoolListeners();
+        if (personalInvitesListener != null) { personalInvitesListener.remove(); personalInvitesListener = null; }
+        myInvites = new JSONArray();
         activeSchoolId = "";
         activeSchoolName = "";
         activeRole = "";
