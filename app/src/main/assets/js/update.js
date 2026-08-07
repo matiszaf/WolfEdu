@@ -49,19 +49,23 @@ async function checkWolfUpdate(userInitiated=false){
       WolfUpdate.getCurrentVersion();
     }
 
-    const controller=new AbortController();
-    const timer=setTimeout(()=>controller.abort(),15000);
+    const url=
+      'https://raw.githubusercontent.com/matiszaf/WolfEdu-Releases/main/version.json?t='+
+      Date.now();
 
-    const response=await fetch(
-      'https://raw.githubusercontent.com/matiszaf/WolfEdu-Releases/main/version.json?t='+Date.now(),
-      {
+    const timeout=new Promise((_,reject)=>{
+      setTimeout(()=>{
+        reject(new Error('TIMEOUT'));
+      },15000);
+    });
+
+    const response=await Promise.race([
+      fetch(url,{
         method:'GET',
-        cache:'no-store',
-        signal:controller.signal
-      }
-    );
-
-    clearTimeout(timer);
+        cache:'no-store'
+      }),
+      timeout
+    ]);
 
     if(!response.ok){
       throw new Error('HTTP '+response.status);
@@ -80,7 +84,6 @@ async function checkWolfUpdate(userInitiated=false){
       && !!wolfUpdate.apkUrl;
 
     wolfUpdate.ok=true;
-    wolfUpdate.checking=false;
 
     if(userInitiated){
       toast(
@@ -93,20 +96,24 @@ async function checkWolfUpdate(userInitiated=false){
     }
 
   }catch(e){
-    wolfUpdate.checking=false;
     wolfUpdate.ok=false;
 
-    if(e && e.name==='AbortError'){
-      wolfUpdate.message='Przekroczono czas połączenia z serwerem aktualizacji.';
+    if(String(e).includes('TIMEOUT')){
+      wolfUpdate.message='Przekroczono czas sprawdzania aktualizacji.';
     }else{
       wolfUpdate.message='Błąd aktualizacji: '+String(e);
     }
 
-    if(userInitiated)toast(wolfUpdate.message);
-  }
+    if(userInitiated){
+      toast(wolfUpdate.message);
+    }
 
-  if(currentPage==='settings')settings();
-  if(currentPage==='home'&&typeof home==='function')home();
+  }finally{
+    wolfUpdate.checking=false;
+
+    if(currentPage==='settings')settings();
+    if(currentPage==='home'&&typeof home==='function')home();
+  }
 }
 function installWolfUpdate(){
   if(!hasUpdateBridge()||!wolfUpdate.available||!wolfUpdate.apkUrl)return;
