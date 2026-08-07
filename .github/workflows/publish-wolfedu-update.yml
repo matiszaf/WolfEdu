@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       version_name:
-        description: "Wersja, np. 0.10.4"
+        description: "Wersja, np. 0.10.1"
         required: true
-        default: "0.10.4"
+        default: "0.10.6"
 
       changelog:
         description: "Krótki opis zmian"
@@ -75,15 +75,19 @@ jobs:
           VERSION_NAME: ${{ inputs.version_name }}
         shell: bash
         run: |
-          VERSION_CODE=$(date -u +%s)
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION_NAME"
+          [[ "$MAJOR" =~ ^[0-9]+$ && "$MINOR" =~ ^[0-9]+$ && "$PATCH" =~ ^[0-9]+$ ]] || {
+            echo "Wersja musi mieć format X.Y.Z"; exit 1;
+          }
+
+          # Oficjalny release dostaje najwyższy slot (9999) danej wersji.
+          VERSION_CODE=$((2000000 + MAJOR*100000000 + MINOR*1000000 + PATCH*10000 + 9999))
 
           echo "WOLFEDU_VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
           echo "WOLFEDU_VERSION_CODE=$VERSION_CODE" >> "$GITHUB_ENV"
-
           echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
           echo "VERSION_CODE=$VERSION_CODE" >> "$GITHUB_ENV"
           echo "RELEASE_TAG=v$VERSION_NAME" >> "$GITHUB_ENV"
-
           echo "WolfEdu $VERSION_NAME ($VERSION_CODE)"
 
       - name: Odtwórz keystore

@@ -36,20 +36,21 @@ jobs:
         id: version
         shell: bash
         run: |
-          BASE_VERSION="$(sed -n 's/^VERSION_NAME=//p' version.properties | head -n1)"
-          test -n "$BASE_VERSION" || { echo "Brakuje VERSION_NAME w version.properties"; exit 1; }
+          VERSION_NAME="$(sed -n 's/^VERSION_NAME=//p' version.properties | head -n1)"
+          test -n "$VERSION_NAME" || { echo "Brakuje VERSION_NAME w version.properties"; exit 1; }
 
-          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
-            VERSION_NAME="${GITHUB_REF_NAME#v}"
-          else
-            VERSION_NAME="$BASE_VERSION"
-          fi
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION_NAME"
+          [[ "$MAJOR" =~ ^[0-9]+$ && "$MINOR" =~ ^[0-9]+$ && "$PATCH" =~ ^[0-9]+$ ]] || {
+            echo "Wersja musi mieć format X.Y.Z"; exit 1;
+          }
+          (( GITHUB_RUN_NUMBER <= 9998 )) || { echo "GITHUB_RUN_NUMBER przekroczył 9998"; exit 1; }
 
-          VERSION_CODE=$(date -u +%s)
+          # Każda linia X.Y.Z ma 10 000 kodów. CI używa 1..9998,
+          # oficjalny OTA tego samego X.Y.Z używa 9999.
+          VERSION_CODE=$((2000000 + MAJOR*100000000 + MINOR*1000000 + PATCH*10000 + GITHUB_RUN_NUMBER))
 
           echo "WOLFEDU_VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
           echo "WOLFEDU_VERSION_CODE=$VERSION_CODE" >> "$GITHUB_ENV"
-
           echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_OUTPUT"
           echo "VERSION_CODE=$VERSION_CODE" >> "$GITHUB_OUTPUT"
 
