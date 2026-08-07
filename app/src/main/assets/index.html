@@ -4,15 +4,37 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>WolfEdu</title>
 <style>
-:root{--p:#1677ff;--p2:#00b8d9;--navy:#071b33;--bg:#f2f6fb;--card:#fff;--text:#112238;--muted:#6b7a8d;--danger:#d83a52;--ok:#16865c;--line:#dce6f2;--soft:#e7f2ff;--shadow:#071b3314}html[data-theme='dark']{--bg:#08121f;--card:#101f31;--text:#f3f7fc;--muted:#9fb0c4;--line:#21364d;--soft:#132c48;--shadow:#00000055}
-*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:var(--bg);color:var(--text)}
-header{background:linear-gradient(135deg,var(--navy),#0b3f73 62%,var(--p2));color:white;padding:20px 18px 24px;position:sticky;top:0;z-index:5;box-shadow:0 3px 15px #4b3cff33;border-radius:0 0 28px 28px}header h1{margin:0;font-size:23px;display:flex;align-items:center;gap:9px}header h1:before{content:"W";width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,var(--p),var(--p2));display:grid;place-items:center;font-size:17px;font-weight:950;box-shadow:0 6px 18px #001d3d55}header p{margin:4px 0 0;opacity:.86;font-size:13px}
-main{padding:14px 14px 92px;max-width:720px;margin:auto}.card{background:var(--card);border-radius:18px;padding:15px;margin-bottom:12px;box-shadow:0 5px 20px var(--shadow);border:1px solid #fff}.row{display:flex;gap:9px;align-items:center}.between{justify-content:space-between}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-h2{font-size:18px;margin:2px 0 12px}h3{font-size:15px;margin:0 0 7px}small,.muted{color:var(--muted)}input,select,textarea{width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--text);font:inherit;outline:none;margin:5px 0}input:focus,select:focus,textarea:focus{border-color:var(--p)}button{border:0;border-radius:12px;padding:11px 14px;font-weight:700;background:var(--p);color:white}button.secondary{background:#eceafd;color:var(--p)}button.danger{background:#ffe8ec;color:var(--danger)}button.mini{padding:7px 10px;font-size:12px}.item{padding:11px 0;border-bottom:1px solid var(--line)}.item:last-child{border-bottom:0}.badge{padding:4px 8px;border-radius:999px;background:#eceafd;color:var(--p);font-weight:700;font-size:12px}.grade{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;background:#eceafd;color:var(--p);font-weight:800;font-size:17px}.empty{text-align:center;padding:22px;color:var(--muted)}
-nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(7,1fr);z-index:9;padding-bottom:max(6px,env(safe-area-inset-bottom))}nav button{background:var(--card);color:var(--muted);border-radius:0;padding:9px 2px 7px;font-size:10px;font-weight:600}nav button.active{color:var(--p)}nav .ico{font-size:19px;display:block;margin-bottom:2px}.hidden{display:none!important}.stat{padding:14px;border-radius:16px;background:var(--soft)}.stat b{display:block;font-size:23px;color:var(--p)}.hero{background:linear-gradient(135deg,var(--p),var(--p2));color:white;border:0;padding:18px}.hero small{color:#ffffffcc}.hero h2{font-size:22px;margin:3px 0 8px}.quick{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.quick button{background:var(--card);color:var(--text);border:1px solid var(--line);text-align:left;min-height:86px;padding:14px;box-shadow:0 4px 14px var(--shadow)}.quick .qico{display:block;font-size:24px;margin-bottom:8px}.progress{height:9px;background:var(--line);border-radius:99px;overflow:hidden;margin-top:8px}.progress span{display:block;height:100%;background:linear-gradient(90deg,var(--p),var(--p2));border-radius:99px}.section-title{display:flex;align-items:center;justify-content:space-between;margin:18px 2px 10px}.section-title h2{margin:0}.linkbtn{background:transparent;color:var(--p);padding:6px}.switch{display:flex;align-items:center;justify-content:space-between;gap:12px}.version{font-size:12px;text-align:center;color:var(--muted);padding:8px}.day{font-weight:800;margin:13px 0 5px}.lesson{display:flex;gap:10px;align-items:center}.time{font-weight:700;color:var(--p);min-width:48px}.toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);background:#1d2330;color:white;padding:10px 14px;border-radius:12px;z-index:20;opacity:0;pointer-events:none;transition:.2s}.toast.show{opacity:1}.setup{min-height:75vh;display:grid;place-items:center}.setup .card{width:100%;max-width:460px}.avatar{width:42px;height:42px;border-radius:13px;background:#eceafd;display:grid;place-items:center;font-weight:800;color:var(--p)}.subject-card{padding:13px;border:1px solid var(--line);border-radius:15px;margin:9px 0}.subject-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.subject-avg{font-size:20px;font-weight:900;color:var(--p)}.grade-chip{display:inline-flex;align-items:center;gap:5px;background:var(--soft);color:var(--p);padding:7px 9px;border-radius:11px;margin:4px 4px 0 0;font-weight:800}.grade-chip small{color:var(--muted);font-weight:600}.actions{display:flex;gap:6px;margin-left:auto}.calc-result{padding:15px;border-radius:15px;background:var(--soft);margin-top:10px;text-align:center}.calc-result b{font-size:25px;color:var(--p);display:block}.filterbar{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}.warn{background:#fff4df;color:#8a5900;padding:10px;border-radius:12px;font-size:13px}.task-overdue{border-left:4px solid var(--danger);padding-left:10px}.task-done{opacity:.62}.task-done b{text-decoration:line-through}.task-type{font-size:11px;padding:4px 7px;border-radius:999px;background:var(--soft);color:var(--p);font-weight:800}.task-date{font-weight:800;color:var(--p)}.task-date.overdue{color:var(--danger)}
-.splash{position:fixed;inset:0;z-index:999;background:radial-gradient(circle at 70% 15%,#1677ff55,transparent 38%),linear-gradient(145deg,#06182d,#0a3765);display:grid;place-items:center;color:white;transition:opacity .45s,visibility .45s}.splash.hide{opacity:0;visibility:hidden}.splash-logo{width:94px;height:94px;border-radius:28px;background:linear-gradient(135deg,#1677ff,#00b8d9);display:grid;place-items:center;font-size:47px;font-weight:950;box-shadow:0 22px 60px #0008}.splash h1{font-size:34px;margin:18px 0 3px}.splash p{margin:0;color:#cbe8ff}.brand-pill{display:inline-flex;align-items:center;gap:7px;padding:5px 9px;border-radius:999px;background:#ffffff20;font-size:12px;margin-bottom:8px}.hero{position:relative;overflow:hidden}.hero:after{content:"W";position:absolute;right:-7px;bottom:-34px;font-size:130px;font-weight:950;color:#ffffff12;transform:rotate(-8deg)}
-
-.sync-pill{display:inline-flex;align-items:center;gap:7px;margin-top:9px;padding:6px 10px;border-radius:999px;background:#ffffff1c;font-size:12px;font-weight:750}.sync-dot{width:8px;height:8px;border-radius:50%;background:#a9b8c8}.sync-pill.online .sync-dot{background:#55e6a5;box-shadow:0 0 0 4px #55e6a522}.sync-pill.syncing .sync-dot{background:#ffd166;animation:pulse 1s infinite}.sync-pill.pending .sync-dot{background:#ff9b71}.sync-box{border:1px solid var(--line);border-radius:16px;padding:14px;background:var(--soft)}.sync-box input{background:var(--card)}.sync-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.sync-email{font-weight:800;color:var(--p);word-break:break-all}.sync-note{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.45}.btn-busy{opacity:.65;pointer-events:none}.btn-full{width:100%}.sync-state{display:flex;align-items:flex-start;gap:10px;margin-bottom:12px}.sync-state .bigdot{width:13px;height:13px;border-radius:50%;margin-top:4px;background:#a9b8c8}.sync-state .bigdot.online{background:var(--ok)}.sync-state .bigdot.syncing{background:#d99b00}.sync-state .bigdot.pending{background:#e66a3d}@keyframes pulse{50%{opacity:.35}}
+:root{
+ --primary:#415f91;--on-primary:#fff;--primary-container:#d6e3ff;--on-primary-container:#001b3e;
+ --secondary:#565f71;--secondary-container:#dae2f9;--tertiary:#705575;--tertiary-container:#fad8fd;
+ --surface:#f9f9ff;--surface-container:#eef0f8;--surface-high:#e8eaf2;--card:#fff;
+ --text:#191c20;--muted:#44474e;--outline:#74777f;--line:#c5c6d0;--danger:#ba1a1a;--danger-container:#ffdad6;
+ --ok:#2e6b48;--shadow:#00000016;--radius:24px
+}
+html[data-theme='dark']{
+ --primary:#aac7ff;--on-primary:#0a305f;--primary-container:#284777;--on-primary-container:#d6e3ff;
+ --secondary:#bec6dc;--secondary-container:#3e4759;--tertiary:#ddbce0;--tertiary-container:#573e5c;
+ --surface:#111318;--surface-container:#1d2026;--surface-high:#272a30;--card:#1b1e24;
+ --text:#e2e2e9;--muted:#c4c6d0;--outline:#8e9099;--line:#44474f;--danger:#ffb4ab;--danger-container:#93000a;
+ --ok:#91d5a8;--shadow:#00000055
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html{background:var(--surface)}body{margin:0;font-family:Roboto,system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--surface);color:var(--text);min-height:100vh}
+header{position:sticky;top:0;z-index:7;background:color-mix(in srgb,var(--surface) 93%,transparent);backdrop-filter:blur(18px);padding:16px 20px 12px;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent)}
+header h1{margin:0;font-size:26px;line-height:1.15;font-weight:700;letter-spacing:-.4px}header p{margin:5px 0 0;color:var(--muted);font-size:13px}
+main{padding:16px 16px 106px;max-width:760px;margin:auto}.card{background:var(--card);border-radius:var(--radius);padding:18px;margin-bottom:14px;border:1px solid color-mix(in srgb,var(--line) 40%,transparent);box-shadow:0 1px 2px var(--shadow)}
+.row{display:flex;gap:10px;align-items:center}.between{justify-content:space-between}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}h2{font-size:20px;margin:2px 0 14px;letter-spacing:-.2px}h3{font-size:16px;margin:0 0 8px}small,.muted{color:var(--muted);line-height:1.4}
+input,select,textarea{width:100%;min-height:52px;padding:13px 15px;border:1px solid var(--outline);border-radius:16px;background:transparent;color:var(--text);font:inherit;outline:none;margin:6px 0}input:focus,select:focus,textarea:focus{border:2px solid var(--primary);padding:12px 14px}textarea{min-height:92px;resize:vertical}
+button{min-height:44px;border:0;border-radius:999px;padding:10px 18px;font:inherit;font-weight:650;background:var(--primary);color:var(--on-primary);cursor:pointer}button:active{transform:scale(.985)}button:disabled,.btn-busy{opacity:.55;pointer-events:none}button.secondary{background:var(--secondary-container);color:var(--text)}button.danger{background:var(--danger-container);color:var(--danger)}button.mini{min-height:34px;padding:6px 12px;font-size:12px}.btn-full{width:100%}.linkbtn{background:transparent;color:var(--primary);padding:8px 10px;min-height:36px}
+.item{padding:14px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent)}.item:last-child{border-bottom:0}.badge{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;background:var(--primary-container);color:var(--on-primary-container);font-weight:700;font-size:12px}.empty{text-align:center;padding:28px 12px;color:var(--muted)}
+nav{position:fixed;left:10px;right:10px;bottom:10px;z-index:10;display:grid;grid-template-columns:repeat(5,1fr);background:color-mix(in srgb,var(--surface-container) 96%,transparent);backdrop-filter:blur(20px);border:1px solid color-mix(in srgb,var(--line) 50%,transparent);border-radius:28px;padding:7px 6px max(7px,env(safe-area-inset-bottom));box-shadow:0 8px 28px #0002}
+nav button{background:transparent;color:var(--muted);border-radius:20px;padding:6px 2px;min-height:58px;font-size:11px;font-weight:650}nav button.active{color:var(--on-primary-container);background:var(--primary-container)}nav .ico{display:block;font-size:20px;margin:0 auto 3px}
+.hidden{display:none!important}.hero{background:linear-gradient(145deg,var(--primary-container),color-mix(in srgb,var(--tertiary-container) 60%,var(--primary-container)));color:var(--on-primary-container);border:0;position:relative;overflow:hidden;box-shadow:none}.hero:after{content:'W';position:absolute;right:-14px;bottom:-52px;font-size:150px;font-weight:800;opacity:.07}.hero small{color:color-mix(in srgb,var(--on-primary-container) 72%,transparent)}.hero h2{font-size:28px;margin:6px 0 10px}.brand-pill{display:inline-flex;padding:6px 10px;border-radius:999px;background:color-mix(in srgb,var(--card) 45%,transparent);font-size:12px;font-weight:700}
+.quick{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.quick button{min-height:112px;border-radius:22px;background:var(--surface-container);color:var(--text);text-align:left;padding:16px;border:1px solid color-mix(in srgb,var(--line) 35%,transparent)}.quick .qico{display:grid;place-items:center;width:42px;height:42px;border-radius:14px;background:var(--primary-container);font-size:20px;margin-bottom:12px}.quick small{display:block;margin-top:4px}.stat{padding:16px;border-radius:22px;background:var(--surface-container)}.stat b{display:block;font-size:28px;color:var(--primary);margin-top:3px}.progress{height:8px;background:var(--surface-high);border-radius:99px;overflow:hidden;margin-top:10px}.progress span{display:block;height:100%;background:var(--primary);border-radius:99px}.section-title{display:flex;align-items:center;justify-content:space-between;margin:22px 3px 11px}.section-title h2{margin:0}
+.avatar{width:46px;height:46px;border-radius:16px;background:var(--primary-container);display:grid;place-items:center;color:var(--on-primary-container);font-weight:800}.warn{background:var(--tertiary-container);color:var(--text);padding:12px 14px;border-radius:18px;font-size:13px;line-height:1.45}.day{font-weight:800;font-size:14px;margin:18px 0 5px;color:var(--primary)}.lesson{display:flex;gap:12px}.time{min-width:54px;font-weight:800;color:var(--primary)}
+.sync-pill{display:inline-flex;align-items:center;gap:7px;margin-top:10px;padding:7px 11px;border-radius:999px;background:var(--surface-container);font-size:12px;font-weight:700;color:var(--muted)}.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--outline)}.sync-pill.online .sync-dot{background:var(--ok)}.sync-pill.syncing .sync-dot{background:#f2b544;animation:pulse 1s infinite}.sync-pill.pending .sync-dot{background:#e47b45}.sync-box{border-radius:22px;padding:15px;background:var(--surface-container)}.sync-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.sync-email{font-weight:700;color:var(--primary);word-break:break-all}.sync-note{font-size:12px;color:var(--muted);margin-top:10px;line-height:1.45}.sync-state{display:flex;gap:10px;align-items:flex-start;margin-bottom:12px}.sync-state .bigdot{width:12px;height:12px;border-radius:50%;margin-top:4px;background:var(--outline)}.sync-state .bigdot.online{background:var(--ok)}.sync-state .bigdot.syncing{background:#f2b544}.sync-state .bigdot.pending{background:#e47b45}
+.toast{position:fixed;left:50%;bottom:92px;transform:translateX(-50%) translateY(12px);background:#303036;color:white;padding:11px 16px;border-radius:14px;z-index:30;opacity:0;transition:.2s;pointer-events:none;max-width:90%;text-align:center}.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.splash{position:fixed;inset:0;z-index:999;background:var(--surface);display:grid;place-items:center;transition:opacity .35s,visibility .35s}.splash.hide{opacity:0;visibility:hidden}.splash-logo{width:88px;height:88px;border-radius:28px;background:var(--primary-container);color:var(--on-primary-container);display:grid;place-items:center;font-size:42px;font-weight:800}.splash h1{font-size:32px;margin:16px 0 4px}.splash p{margin:0;color:var(--muted)}.setup{min-height:68vh;display:grid;place-items:center}.setup .card{width:100%;max-width:480px}.switch{display:flex;justify-content:space-between;align-items:center;gap:12px}.version{text-align:center;color:var(--muted);font-size:12px;padding:10px}.task-type,.task-date{font-weight:700}.task-type{font-size:11px;background:var(--secondary-container);padding:5px 8px;border-radius:999px}.task-overdue{border-left:4px solid var(--danger);padding-left:12px}.task-done{opacity:.6}.task-done b{text-decoration:line-through}@keyframes pulse{50%{opacity:.35}}
+@media(max-width:390px){main{padding-left:12px;padding-right:12px}.quick{gap:9px}.grid{grid-template-columns:1fr}.sync-actions{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -20,7 +42,11 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
 <header><h1 id="headTitle">WolfEdu</h1><p id="headSub">Twój inteligentny dziennik szkolny</p><div id="syncPill" class="sync-pill"><span class="sync-dot"></span><span id="syncPillText">Tylko lokalnie</span></div></header>
 <main id="app"></main>
 <nav id="nav" class="hidden">
-<button data-page="home"><span class="ico">🏠</span>Start</button><button data-page="classes"><span class="ico">👥</span>Klasy</button><button data-page="grades"><span class="ico">⭐</span>Oceny</button><button data-page="tasks"><span class="ico">📝</span>Zadania</button><button data-page="attendance"><span class="ico">✅</span>Frekw.</button><button data-page="plan"><span class="ico">📅</span>Plan</button><button data-page="settings"><span class="ico">⚙️</span>Opcje</button>
+<button data-page="home"><span class="ico">⌂</span>Start</button>
+<button data-page="grades"><span class="ico">★</span>Oceny</button>
+<button data-page="tasks"><span class="ico">✓</span>Zadania</button>
+<button data-page="plan"><span class="ico">▦</span>Plan</button>
+<button data-page="settings"><span class="ico">⚙</span>Więcej</button>
 </nav><div id="toast" class="toast"></div>
 <script>
 const KEY='wolfEduDataV1';
@@ -33,51 +59,38 @@ function setup(){setHead('WolfEdu','Pierwsza konfiguracja');$('#nav').classList.
 function createSchool(){let v=$('#school').value.trim();if(!v)return toast('Wpisz nazwę szkoły');db.school=v;save();render('home')}
 function render(p=page){page=p;if(!db.school&&!wolfSchool.schoolName)return setup();$('#nav').classList.remove('hidden');document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===page));({home,classes,grades,tasks,attendance,plan,settings}[page]||home)()}
 function home(){
-  let displaySchool=wolfSchool.schoolName||db.school;
+  let displaySchool=wolfSchool.schoolName||db.school||'WolfEdu';
   setHead(displaySchool,new Date().toLocaleDateString('pl-PL',{weekday:'long',day:'numeric',month:'long'}));
-
-  let cloudMode=!!wolfSchool.activeSchoolId;
-  let studentsCount=cloudMode?(wolfSchool.students||[]).length:db.students.length;
-
-  let allWeight=db.grades.reduce((a,g)=>a+Number(g.weight||1),0),
-      avg=allWeight?(db.grades.reduce((a,g)=>a+Number(g.value)*Number(g.weight||1),0)/allWeight).toFixed(2):'—';
-
-  let total=db.attendance.length,
-      present=db.attendance.filter(a=>a.state==='Obecny').length,
-      att=total?Math.round(present/total*100):100;
-
-  let nextText='Na dziś nie masz wpisanych lekcji.';
-  if(cloudMode && wolfSchool.timetable?.length){
-    let jsDay=new Date().getDay(), dayNum=jsDay===0?7:jsDay;
-    let selected=localStorage.getItem('wolfEduPlanClass')||wolfSchool.classes?.[0]?.id||'';
-    let now=new Date().toTimeString().slice(0,5);
-    let lessons=wolfSchool.timetable
-      .filter(l=>l.classId===selected && Number(l.day)===dayNum)
-      .sort((a,b)=>(a.start||'99:99').localeCompare(b.start||'99:99'));
-    let n=lessons.find(l=>!l.end || l.end>=now) || lessons[0];
-    if(n){
-      let sub=wolfSchool.subjects.find(s=>s.id===n.subjectId);
-      nextText=`Najbliższa lekcja: <b>${esc(sub?.name||'Przedmiot')}</b>${n.start?' o '+esc(n.start):''}`;
-    }
-  }else{
-    let day=days[(new Date().getDay()+6)%7],
-        next=db.lessons.filter(l=>l.day===day).sort((a,b)=>a.time.localeCompare(b.time))[0];
-    if(next) nextText=`Najbliższa lekcja: <b>${esc(next.subject)}</b> o ${esc(next.time)}`;
+  let cloud=!!wolfSchool.activeSchoolId;
+  let gradesSrc=cloud?(wolfSchool.grades||[]):db.grades;
+  let tasksSrc=cloud?(wolfSchool.tasks||[]):db.tasks;
+  let attendanceSrc=cloud?(wolfSchool.attendance||[]):db.attendance;
+  let studentsCount=cloud?(wolfSchool.students||[]).length:db.students.length;
+  let totalWeight=gradesSrc.reduce((a,g)=>a+Number(g.weight||1),0);
+  let avg=totalWeight?(gradesSrc.reduce((a,g)=>a+Number(g.value||0)*Number(g.weight||1),0)/totalWeight).toFixed(2):'—';
+  let total=attendanceSrc.length,present=attendanceSrc.filter(a=>a.state==='Obecny').length;
+  let att=total?Math.round(present/total*100):'—';
+  let nextText='Brak lekcji na dziś.';
+  if(cloud&&wolfSchool.timetable?.length){
+    let day=new Date().getDay()||7,selected=localStorage.getItem('wolfEduPlanClass')||wolfSchool.classes?.[0]?.id||'',now=new Date().toTimeString().slice(0,5);
+    let lessons=wolfSchool.timetable.filter(l=>l.classId===selected&&Number(l.day)===day).sort((a,b)=>(a.start||'99:99').localeCompare(b.start||'99:99'));
+    let n=lessons.find(l=>!l.end||l.end>=now)||lessons[0];
+    if(n){let sub=wolfSchool.subjects.find(s=>s.id===n.subjectId);nextText=`Następna: <b>${esc(sub?.name||'Przedmiot')}</b>${n.start?' · '+esc(n.start):''}`}
   }
-
-  app.innerHTML=`<div class="card hero"><span class="brand-pill">🐺 WolfEdu 0.9 beta</span><small>Dzień dobry 👋</small><h2>${esc(displaySchool)}</h2><div>${nextText}</div>${cloudMode?'<small style="display:block;margin-top:8px">Dane szkoły: WolfCloud realtime</small>':''}</div>
-  <div class="section-title"><h2>Skróty</h2></div>
+  let activeTasks=tasksSrc.filter(t=>!t.done).sort((a,b)=>String(a.due||'').localeCompare(String(b.due||''))).slice(0,3);
+  app.innerHTML=`<div class="card hero"><span class="brand-pill">WolfEdu · Material 3</span><small>${cloud?'WolfCloud połączony':'Tryb lokalny'}</small><h2>${esc(displaySchool)}</h2><div>${nextText}</div></div>
+  <div class="section-title"><h2>Najważniejsze</h2></div>
   <div class="quick">
-    <button onclick="render('grades')"><span class="qico">⭐</span><b>Oceny</b><br><small>Dane legacy</small></button>
-    <button onclick="render('plan')"><span class="qico">📅</span><b>Plan lekcji</b><br><small>WolfCloud realtime</small></button>
-    <button onclick="render('tasks')"><span class="qico">📝</span><b>Zadania</b><br><small>Dane legacy</small></button>
-    <button onclick="render('attendance')"><span class="qico">✅</span><b>Frekwencja</b><br><small>Dane legacy</small></button>
-    <button onclick="render('classes')"><span class="qico">👥</span><b>Klasy</b><br><small>${cloudMode?'WolfCloud realtime':'Lokalnie'}</small></button>
+    <button onclick="render('grades')"><span class="qico">★</span><b>Oceny</b><small>${cloud?'Realtime':'Lokalnie'}</small></button>
+    <button onclick="render('plan')"><span class="qico">▦</span><b>Plan lekcji</b><small>${cloud?'Realtime':'Lokalnie'}</small></button>
+    <button onclick="render('tasks')"><span class="qico">✓</span><b>Zadania</b><small>${cloud?'Realtime':'Lokalnie'}</small></button>
+    <button onclick="render('attendance')"><span class="qico">◷</span><b>Frekwencja</b><small>${cloud?'Realtime':'Lokalnie'}</small></button>
+    <button onclick="render('classes')"><span class="qico">♙</span><b>Klasy i uczniowie</b><small>${studentsCount} uczniów</small></button>
+    <button onclick="render('settings')"><span class="qico">⚙</span><b>Ustawienia</b><small>Konto i synchronizacja</small></button>
   </div>
   <div class="section-title"><h2>Podsumowanie</h2></div>
-  <div class="grid"><div class="stat"><small>Uczniowie</small><b>${studentsCount}</b></div><div class="stat"><small>Średnia ocen legacy</small><b>${avg}</b></div></div>
-  <div class="card" style="margin-top:12px"><div class="row between"><div><h3>Frekwencja legacy</h3><small>${present} obecności z ${total} wpisów</small></div><b>${att}%</b></div><div class="progress"><span style="width:${att}%"></span></div></div>
-  <div class="card"><div class="row between"><h2 style="margin:0">Najbliższe terminy legacy</h2><button class="linkbtn" onclick="render('tasks')">Wszystkie</button></div>${db.tasks.filter(t=>!t.done).sort((a,b)=>a.due.localeCompare(b.due)).slice(0,3).map(t=>`<div class="item"><div class="row between"><div><span class="task-type">${esc(t.type)}</span> <b>${esc(t.title)}</b><br><small>${esc(t.subject||'Bez przedmiotu')}</small></div><span class="task-date">${new Date(t.due+'T12:00:00').toLocaleDateString('pl-PL',{day:'2-digit',month:'2-digit'})}</span></div></div>`).join('')||'<div class="empty">Brak nadchodzących terminów</div>'}</div>`;
+  <div class="grid"><div class="stat"><small>Średnia ocen</small><b>${avg}</b></div><div class="stat"><small>Frekwencja</small><b>${att==='—'?'—':att+'%'}</b></div></div>
+  <div class="card" style="margin-top:14px"><div class="row between"><div><h2 style="margin:0">Najbliższe terminy</h2><small>${activeTasks.length?'Do zrobienia':'Wszystko ogarnięte'}</small></div><button class="linkbtn" onclick="render('tasks')">Wszystkie</button></div>${activeTasks.map(t=>`<div class="item row between"><div><b>${esc(t.title||'Zadanie')}</b><br><small>${esc(t.due||'Bez terminu')}</small></div><span class="badge">${esc(t.type||'Zadanie')}</span></div>`).join('')||'<div class="empty">Brak aktywnych zadań</div>'}</div>`;
 }
 function classes(){
   let cloudMode=!!wolfSchool.activeSchoolId;
@@ -97,19 +110,86 @@ function addClass(){let v=$('#className').value.trim();if(!v)return;db.classes.p
 function studentOptions(){return db.students.map(s=>{let c=db.classes.find(x=>x.id===s.classId);return `<option value="${s.id}">${esc(s.name)} (${esc(c?.name||'?')})</option>`}).join('')}
 function uniqueSubjects(){return [...new Set(db.grades.map(g=>g.subject.trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pl'))}
 function weightedAverage(list){let w=list.reduce((a,g)=>a+Number(g.weight||1),0);return w?list.reduce((a,g)=>a+Number(g.value)*Number(g.weight||1),0)/w:null}
-function grades(){setHead('Oceny',db.school);let edit=editingGradeId?db.grades.find(g=>g.id===editingGradeId):null;let selectedStudent=sessionStorage.getItem('gradeStudent')||'';let selectedSubject=sessionStorage.getItem('gradeSubject')||'';let filtered=db.grades.filter(g=>(!selectedStudent||g.studentId===selectedStudent)&&(!selectedSubject||g.subject===selectedSubject));let grouped={};filtered.forEach(g=>(grouped[g.subject]??=[]).push(g));let student=selectedStudent?db.students.find(s=>s.id===selectedStudent):null;app.innerHTML=`<div class="card"><h2>${edit?'Edytuj ocenę':'Dodaj ocenę'}</h2><select id="gStudent"><option value="">Wybierz ucznia</option>${studentOptions()}</select><div class="grid"><input id="gSubject" list="subjectList" placeholder="Przedmiot"><select id="gValue">${[1,2,3,4,5,6].map(v=>`<option ${String(edit?.value)===String(v)?'selected':''}>${v}</option>`).join('')}</select></div><datalist id="subjectList">${uniqueSubjects().map(x=>`<option value="${esc(x)}">`).join('')}</datalist><div class="grid"><select id="gWeight">${[1,2,3,4,5,6].map(w=>`<option value="${w}" ${Number(edit?.weight||1)===w?'selected':''}>Waga ${w}</option>`).join('')}</select><input id="gNote" placeholder="Opis, np. sprawdzian" value="${esc(edit?.note||'')}"></div><button style="width:100%;margin-top:6px" onclick="saveGrade()">${edit?'Zapisz zmiany':'Dodaj ocenę'}</button>${edit?'<button class="secondary" style="width:100%;margin-top:7px" onclick="cancelGradeEdit()">Anuluj edycję</button>':''}</div>
-<div class="card"><div class="row between"><h2 style="margin:0">Dziennik ocen</h2><span class="badge">średnia ważona</span></div><div class="filterbar"><select id="gradeFilterStudent" onchange="setGradeFilter()"><option value="">Wszyscy uczniowie</option>${studentOptions()}</select><select id="gradeFilterSubject" onchange="setGradeFilter()"><option value="">Wszystkie przedmioty</option>${uniqueSubjects().map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('')}</select></div>${student?`<div class="warn">Pokazujesz oceny ucznia: <b>${esc(student.name)}</b></div>`:''}${Object.keys(grouped).sort((a,b)=>a.localeCompare(b,'pl')).map(subject=>{let list=grouped[subject],avg=weightedAverage(list);return `<div class="subject-card"><div class="subject-head"><div><b>${esc(subject)}</b><br><small>${list.length} ${list.length===1?'ocena':'ocen'}</small></div><div class="subject-avg">${avg?.toFixed(2)||'—'}</div></div>${list.slice().sort((a,b)=>new Date(b.date)-new Date(a.date)).map(g=>{let st=db.students.find(x=>x.id===g.studentId);return `<div class="item row"><div class="grade">${esc(g.value)}</div><div style="flex:1"><b>${esc(st?.name||'Usunięty uczeń')}</b><br><small>${esc(g.note||'bez opisu')} · waga ${g.weight||1} · ${new Date(g.date).toLocaleDateString('pl-PL')}</small></div><div class="actions"><button class="secondary mini" onclick="editGrade('${g.id}')">Edytuj</button><button class="danger mini" onclick="delGrade('${g.id}')">×</button></div></div>`}).join('')}</div>`}).join('')||'<div class="empty">Brak ocen dla wybranych filtrów</div>'}</div>
-<div class="card"><h2>Kalkulator wymaganej oceny</h2><p class="muted">Oblicza, jaką ocenę trzeba zdobyć, aby osiągnąć wybraną średnią ważoną.</p><select id="calcStudent"><option value="">Wybierz ucznia</option>${studentOptions()}</select><select id="calcSubject"><option value="">Wybierz przedmiot</option>${uniqueSubjects().map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('')}</select><div class="grid"><input id="calcTarget" type="number" min="1" max="6" step="0.01" placeholder="Docelowa średnia, np. 4.75"><select id="calcWeight">${[1,2,3,4,5,6].map(w=>`<option value="${w}">Waga nowej oceny: ${w}</option>`).join('')}</select></div><button style="width:100%;margin-top:6px" onclick="calculateNeededGrade()">Oblicz</button><div id="calcOutput"></div></div>`;setTimeout(()=>{if($('#gStudent'))$('#gStudent').value=edit?.studentId||selectedStudent;if($('#gSubject'))$('#gSubject').value=edit?.subject||selectedSubject;if($('#gradeFilterStudent'))$('#gradeFilterStudent').value=selectedStudent;if($('#gradeFilterSubject'))$('#gradeFilterSubject').value=selectedSubject},0)}
+function grades(){
+  if(!wolfSchool.activeSchoolId){
+    setHead('Oceny',db.school);
+    app.innerHTML=`<div class="card warn"><b>Tryb legacy</b><br>Brak aktywnej szkoły WolfCloud.</div><div class="card"><h2>Oceny lokalne</h2>${db.grades.map(g=>`<div class="item"><b>${esc(g.subject||'Przedmiot')}</b> · ${esc(g.value)} (waga ${esc(g.weight||1)})</div>`).join('')||'<div class="empty">Brak ocen</div>'}</div>`;
+    return;
+  }
+  setHead('Oceny',wolfSchool.schoolName);
+  let students=wolfSchool.students||[],subjects=wolfSchool.subjects||[],teachers=wolfSchool.teachers||[],list=wolfSchool.grades||[];
+  app.innerHTML=`<div class="card"><h2>Dodaj ocenę</h2>
+  <select id="cgStudent"><option value="">Uczeń</option>${students.map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('')}</select>
+  <select id="cgSubject"><option value="">Przedmiot</option>${subjects.map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('')}</select>
+  <select id="cgTeacher"><option value="">Nauczyciel (opcjonalnie)</option>${teachers.map(t=>`<option value="${esc(t.id)}">${esc(t.name)}</option>`).join('')}</select>
+  <div class="grid"><select id="cgValue">${[1,2,3,4,5,6].map(v=>`<option>${v}</option>`).join('')}</select><select id="cgWeight">${[1,2,3,4,5,6].map(v=>`<option value="${v}">Waga ${v}</option>`).join('')}</select></div>
+  <input id="cgCategory" placeholder="Kategoria, np. sprawdzian"><input id="cgComment" placeholder="Komentarz">
+  <input id="cgDate" type="date" value="${new Date().toISOString().slice(0,10)}">
+  <button style="width:100%" onclick="addCloudGrade(this)">Dodaj ocenę</button></div>
+  <div class="card"><h2>Oceny realtime</h2>${list.slice().reverse().map(g=>`<div class="item row between"><div><b>${esc(subjects.find(s=>s.id===g.subjectId)?.name||'Przedmiot')}</b><br><small>${esc(students.find(s=>s.id===g.studentId)?.name||'Uczeń')} · ${esc(g.category||'Ocena')}</small></div><div class="row"><span class="badge">${esc(g.value)} · waga ${esc(g.weight||1)}</span><button class="danger mini" onclick="WolfSync.deleteGrade('${g.id}')">×</button></div></div>`).join('')||'<div class="empty">Brak ocen</div>'}</div>`;
+}
+function addCloudGrade(btn){
+  let student=$('#cgStudent').value,subject=$('#cgSubject').value;
+  if(!student||!subject)return toast('Wybierz ucznia i przedmiot');
+  btn.disabled=true;btn.textContent='Dodaję…';
+  WolfSync.addGrade(student,subject,$('#cgTeacher').value,Number($('#cgValue').value),Number($('#cgWeight').value),$('#cgCategory').value.trim(),$('#cgComment').value.trim(),$('#cgDate').value);
+}
 function saveGrade(){let studentId=$('#gStudent').value,subject=$('#gSubject').value.trim(),value=$('#gValue').value,weight=Number($('#gWeight').value),note=$('#gNote').value.trim();if(!studentId||!subject)return toast('Wybierz ucznia i przedmiot');if(editingGradeId){let g=db.grades.find(x=>x.id===editingGradeId);if(g)Object.assign(g,{studentId,subject,value,weight,note});editingGradeId=null;toast('Ocena zmieniona')}else{db.grades.push({id:id(),studentId,subject,value,weight,note,date:new Date().toISOString()});toast('Ocena dodana')}save();grades()}
 function editGrade(i){editingGradeId=i;grades();window.scrollTo(0,0)}function cancelGradeEdit(){editingGradeId=null;grades()}function delGrade(i){if(!confirm('Usunąć tę ocenę?'))return;db.grades=db.grades.filter(g=>g.id!==i);if(editingGradeId===i)editingGradeId=null;save();grades()}
 function setGradeFilter(){sessionStorage.setItem('gradeStudent',$('#gradeFilterStudent').value);sessionStorage.setItem('gradeSubject',$('#gradeFilterSubject').value);grades()}
 function calculateNeededGrade(){let sid=$('#calcStudent').value,subject=$('#calcSubject').value,target=Number($('#calcTarget').value),newWeight=Number($('#calcWeight').value),out=$('#calcOutput');if(!sid||!subject||!target)return toast('Uzupełnij ucznia, przedmiot i średnią');let list=db.grades.filter(g=>g.studentId===sid&&g.subject===subject),sum=list.reduce((a,g)=>a+Number(g.value)*Number(g.weight||1),0),weights=list.reduce((a,g)=>a+Number(g.weight||1),0),current=weights?sum/weights:0,needed=(target*(weights+newWeight)-sum)/newWeight;let text;if(needed<=1)text=`Wystarczy ocena <b>1</b> lub wyższa.`;else if(needed>6)text=`Jedna ocena z wagą ${newWeight} nie wystarczy — potrzeba matematycznie <b>${needed.toFixed(2)}</b>.`;else text=`Potrzebujesz co najmniej <b>${Math.ceil(needed)}</b> <small>(dokładnie ${needed.toFixed(2)})</small>.`;out.innerHTML=`<div class="calc-result"><small>Obecna średnia: ${current?current.toFixed(2):'brak ocen'}</small>${text}</div>`}
 let editingTaskId=null;
 function taskDateLabel(d){if(!d)return 'Brak terminu';let date=new Date(d+'T12:00:00'),today=new Date();today.setHours(0,0,0,0);let tomorrow=new Date(today);tomorrow.setDate(today.getDate()+1);if(date.getTime()===today.getTime())return 'Dzisiaj';if(date.getTime()===tomorrow.getTime())return 'Jutro';return date.toLocaleDateString('pl-PL',{day:'2-digit',month:'2-digit',year:'numeric'})}
-function tasks(){setHead('Zadania i sprawdziany',db.school);let edit=db.tasks.find(t=>t.id===editingTaskId),filter=sessionStorage.getItem('taskFilter')||'open',today=new Date().toISOString().slice(0,10),list=db.tasks.filter(t=>filter==='all'||(filter==='done'?t.done:!t.done)).sort((a,b)=>(a.done-b.done)||a.due.localeCompare(b.due));app.innerHTML=`<div class="card"><h2>${edit?'Edytuj termin':'Dodaj termin'}</h2><input id="tTitle" placeholder="Nazwa, np. ćwiczenia str. 42" value="${esc(edit?.title||'')}"><div class="grid"><input id="tSubject" list="subjectList" placeholder="Przedmiot" value="${esc(edit?.subject||'')}"><input id="tDue" type="date" value="${esc(edit?.due||today)}"></div><datalist id="subjectList">${uniqueSubjects().map(x=>`<option value="${esc(x)}">`).join('')}</datalist><div class="grid"><select id="tType">${['Zadanie domowe','Sprawdzian','Kartkówka','Projekt','Inne'].map(x=>`<option ${edit?.type===x?'selected':''}>${x}</option>`).join('')}</select><select id="tPriority">${['Niski','Normalny','Wysoki'].map(x=>`<option ${edit?.priority===x?'selected':''}>Priorytet: ${x}</option>`).join('')}</select></div><textarea id="tNote" rows="3" placeholder="Notatka (opcjonalnie)">${esc(edit?.note||'')}</textarea><button style="width:100%;margin-top:6px" onclick="saveTask()">${edit?'Zapisz zmiany':'Dodaj termin'}</button>${edit?'<button class="secondary" style="width:100%;margin-top:7px" onclick="cancelTaskEdit()">Anuluj edycję</button>':''}</div><div class="card"><div class="row between"><h2 style="margin:0">Lista terminów</h2><span class="badge">${db.tasks.filter(t=>!t.done).length} aktywnych</span></div><select id="taskFilter" onchange="setTaskFilter(this.value)"><option value="open" ${filter==='open'?'selected':''}>Do zrobienia</option><option value="done" ${filter==='done'?'selected':''}>Ukończone</option><option value="all" ${filter==='all'?'selected':''}>Wszystkie</option></select>${list.map(t=>{let overdue=!t.done&&t.due<today;return `<div class="item ${overdue?'task-overdue':''} ${t.done?'task-done':''}"><div class="row"><button class="secondary mini" onclick="toggleTask('${t.id}')">${t.done?'↩':'✓'}</button><div style="flex:1"><div class="row" style="flex-wrap:wrap"><span class="task-type">${esc(t.type)}</span><b>${esc(t.title)}</b>${t.priority==='Wysoki'?'<span class="badge">Ważne</span>':''}</div><small>${esc(t.subject||'Bez przedmiotu')}${t.note?' · '+esc(t.note):''}</small><br><span class="task-date ${overdue?'overdue':''}">${overdue?'Po terminie: ':''}${taskDateLabel(t.due)}</span></div><div class="actions"><button class="secondary mini" onclick="editTask('${t.id}')">Edytuj</button><button class="danger mini" onclick="deleteTask('${t.id}')">×</button></div></div></div>`}).join('')||'<div class="empty">Brak terminów w tym widoku</div>'}</div>`}
+function tasks(){
+  if(!wolfSchool.activeSchoolId){
+    setHead('Zadania',db.school);
+    app.innerHTML=`<div class="card warn"><b>Tryb legacy</b><br>Brak aktywnej szkoły WolfCloud.</div><div class="card">${db.tasks.map(t=>`<div class="item">${esc(t.title)}</div>`).join('')||'<div class="empty">Brak zadań</div>'}</div>`;
+    return;
+  }
+  setHead('Zadania',wolfSchool.schoolName);
+  let classes=wolfSchool.classes||[],students=wolfSchool.students||[],subjects=wolfSchool.subjects||[],teachers=wolfSchool.teachers||[],list=wolfSchool.tasks||[];
+  app.innerHTML=`<div class="card"><h2>Dodaj zadanie</h2><input id="ctTitle" placeholder="Tytuł">
+  <select id="ctClass"><option value="">Klasa (opcjonalnie)</option>${classes.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('')}</select>
+  <select id="ctStudent"><option value="">Uczeń (opcjonalnie)</option>${students.map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('')}</select>
+  <select id="ctSubject"><option value="">Przedmiot</option>${subjects.map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('')}</select>
+  <select id="ctTeacher"><option value="">Nauczyciel (opcjonalnie)</option>${teachers.map(t=>`<option value="${esc(t.id)}">${esc(t.name)}</option>`).join('')}</select>
+  <select id="ctType"><option>Zadanie domowe</option><option>Sprawdzian</option><option>Kartkówka</option><option>Projekt</option></select>
+  <input id="ctDue" type="date"><input id="ctNote" placeholder="Notatka">
+  <button style="width:100%" onclick="addCloudTask(this)">Dodaj zadanie</button></div>
+  <div class="card"><h2>Zadania realtime</h2>${list.slice().reverse().map(t=>`<div class="item row between"><div><b>${esc(t.title||'Zadanie')}</b><br><small>${esc(subjects.find(s=>s.id===t.subjectId)?.name||'')} · ${esc(t.due||'')}</small></div><button class="secondary mini" onclick="WolfSync.setTaskDone('${t.id}',${!t.done})">${t.done?'Przywróć':'Gotowe'}</button></div>`).join('')||'<div class="empty">Brak zadań</div>'}</div>`;
+}
+function addCloudTask(btn){
+  let title=$('#ctTitle').value.trim(),subject=$('#ctSubject').value;
+  if(!title||!subject)return toast('Wpisz tytuł i wybierz przedmiot');
+  btn.disabled=true;btn.textContent='Dodaję…';
+  WolfSync.addTask($('#ctClass').value,$('#ctStudent').value,subject,$('#ctTeacher').value,title,$('#ctType').value,$('#ctNote').value.trim(),$('#ctDue').value);
+}
 function saveTask(){let title=$('#tTitle').value.trim(),subject=$('#tSubject').value.trim(),due=$('#tDue').value,type=$('#tType').value,priority=$('#tPriority').value,note=$('#tNote').value.trim();if(!title||!due)return toast('Wpisz nazwę i termin');if(editingTaskId){let t=db.tasks.find(x=>x.id===editingTaskId);if(t)Object.assign(t,{title,subject,due,type,priority,note});editingTaskId=null;toast('Termin zmieniony')}else{db.tasks.push({id:id(),title,subject,due,type,priority,note,done:false,created:new Date().toISOString()});toast('Termin dodany')}save();tasks()}
 function editTask(i){editingTaskId=i;tasks();window.scrollTo(0,0)}function cancelTaskEdit(){editingTaskId=null;tasks()}function toggleTask(i){let t=db.tasks.find(x=>x.id===i);if(t){t.done=!t.done;save();tasks();toast(t.done?'Oznaczono jako wykonane':'Przywrócono termin')}}function deleteTask(i){if(!confirm('Usunąć ten termin?'))return;db.tasks=db.tasks.filter(t=>t.id!==i);if(editingTaskId===i)editingTaskId=null;save();tasks()}function setTaskFilter(v){sessionStorage.setItem('taskFilter',v);tasks()}
-function attendance(){setHead('Frekwencja',db.school);app.innerHTML=`<div class="card"><h2>Dodaj wpis</h2><select id="aStudent"><option value="">Wybierz ucznia</option>${studentOptions()}</select><div class="grid"><input id="aDate" type="date" value="${new Date().toISOString().slice(0,10)}"><select id="aState"><option>Obecny</option><option>Nieobecny</option><option>Spóźniony</option><option>Usprawiedliwiony</option></select></div><button style="width:100%;margin-top:6px" onclick="addAttendance()">Zapisz</button></div><div class="card"><h2>Historia</h2>${db.attendance.slice().reverse().map(a=>{let s=db.students.find(x=>x.id===a.studentId);return `<div class="item row between"><div><b>${esc(s?.name||'Usunięty uczeń')}</b><br><small>${esc(a.date)} · ${esc(a.state)}</small></div><button class="danger mini" onclick="delAttendance('${a.id}')">×</button></div>`}).join('')||'<div class="empty">Brak wpisów</div>'}</div>`}
+function attendance(){
+  if(!wolfSchool.activeSchoolId){
+    setHead('Frekwencja',db.school);
+    app.innerHTML=`<div class="card warn"><b>Tryb legacy</b><br>Brak aktywnej szkoły WolfCloud.</div><div class="card">${db.attendance.map(a=>`<div class="item">${esc(a.state)}</div>`).join('')||'<div class="empty">Brak wpisów</div>'}</div>`;
+    return;
+  }
+  setHead('Frekwencja',wolfSchool.schoolName);
+  let classes=wolfSchool.classes||[],students=wolfSchool.students||[],subjects=wolfSchool.subjects||[],teachers=wolfSchool.teachers||[],list=wolfSchool.attendance||[];
+  app.innerHTML=`<div class="card"><h2>Dodaj wpis</h2>
+  <select id="caStudent"><option value="">Uczeń</option>${students.map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('')}</select>
+  <select id="caClass"><option value="">Klasa</option>${classes.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('')}</select>
+  <select id="caSubject"><option value="">Przedmiot</option>${subjects.map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('')}</select>
+  <select id="caTeacher"><option value="">Nauczyciel (opcjonalnie)</option>${teachers.map(t=>`<option value="${esc(t.id)}">${esc(t.name)}</option>`).join('')}</select>
+  <input id="caDate" type="date" value="${new Date().toISOString().slice(0,10)}">
+  <div class="grid"><select id="caState"><option>Obecny</option><option>Nieobecny</option><option>Spóźniony</option><option>Zwolniony</option><option>Usprawiedliwiony</option></select><input id="caLesson" type="number" min="1" value="1"></div>
+  <button style="width:100%" onclick="addCloudAttendance(this)">Dodaj wpis</button></div>
+  <div class="card"><h2>Frekwencja realtime</h2>${list.slice().reverse().map(a=>`<div class="item row between"><div><b>${esc(students.find(s=>s.id===a.studentId)?.name||'Uczeń')}</b><br><small>${esc(a.date||'')} · lekcja ${esc(a.lesson||'')}</small></div><span class="badge">${esc(a.state||'')}</span></div>`).join('')||'<div class="empty">Brak wpisów</div>'}</div>`;
+}
+function addCloudAttendance(btn){
+  let student=$('#caStudent').value,klass=$('#caClass').value;
+  if(!student||!klass)return toast('Wybierz ucznia i klasę');
+  btn.disabled=true;btn.textContent='Dodaję…';
+  WolfSync.addAttendance(student,klass,$('#caSubject').value,$('#caTeacher').value,$('#caDate').value,$('#caState').value,Number($('#caLesson').value||1));
+}
 function addAttendance(){let studentId=$('#aStudent').value,date=$('#aDate').value,state=$('#aState').value;if(!studentId)return toast('Wybierz ucznia');db.attendance.push({id:id(),studentId,date,state});save();attendance();toast('Frekwencja zapisana')}function delAttendance(i){db.attendance=db.attendance.filter(a=>a.id!==i);save();attendance()}
 const days=['Poniedziałek','Wtorek','Środa','Czwartek','Piątek'];
 function plan(){
@@ -141,15 +221,15 @@ function settings(){
   ${syncLoggedIn?`<div class="sync-state"><span class="bigdot ${syncState}"></span><div><b>${esc(syncTitle)}</b><br><small>${esc(syncDetail)}</small></div></div>
   <div class="sync-email">${esc(syncEmail)}</div>
   <div class="sync-actions"><button onclick="syncNow(this)">Synchronizuj teraz</button><button class="secondary" onclick="logoutSync(this)">Wyloguj</button></div>
-  <div class="sync-note">Szkoła, klasy, uczniowie, przedmioty, nauczyciele i plan są pobierane z nowego WolfCloud realtime. Oceny, zadania i frekwencja pozostają chwilowo w warstwie legacy.</div>`
+  <div class="sync-note">Szkoła, klasy, uczniowie, przedmioty, nauczyciele, plan, oceny, zadania i frekwencja korzystają z WolfCloud realtime.</div>`
   :`<div class="sync-state"><span class="bigdot"></span><div><b>Połącz urządzenia</b><br><small>Zaloguj się lub utwórz konto.</small></div></div><input id="syncEmail" type="email" autocomplete="email" placeholder="Adres e-mail"><input id="syncPassword" type="password" autocomplete="current-password" placeholder="Hasło (minimum 6 znaków)"><div class="sync-actions"><button onclick="loginSync(this)">Zaloguj</button><button class="secondary" onclick="registerSync(this)">Utwórz konto</button></div>`}
   </div></div>
 
   <div class="card"><h2>Wygląd</h2><div class="switch"><div><b>Tryb ciemny</b><br><small>Przyciemnia interfejs aplikacji</small></div><button class="secondary" onclick="toggleTheme()">${dark?'Wyłącz':'Włącz'}</button></div></div>
 
-  <div class="card"><h2>Kopia danych legacy</h2><small>Eksport obejmuje obecnie lokalne oceny, zadania i frekwencję. Dane szkoły i plan są zapisane w WolfCloud.</small><button class="btn-full" style="margin-top:10px" onclick="exportData(this)">Eksportuj kopię JSON</button><label><input id="importFile" type="file" accept="application/json" style="margin-top:10px" onchange="importData(event)"></label></div>
+  <div class="card"><h2>Kopia danych lokalnych</h2><small>Eksport zapisuje lokalną kopię awaryjną. Dane szkolne synchronizowane przez WolfCloud pozostają w Firestore.</small><button class="btn-full" style="margin-top:10px" onclick="exportData(this)">Eksportuj kopię JSON</button><label><input id="importFile" type="file" accept="application/json" style="margin-top:10px" onchange="importData(event)"></label></div>
 
-  <div class="version">WolfEdu 0.9.0-beta.2 · UI & Data Consistency</div>`;
+  <div class="version">WolfEdu 0.9.5-beta.2 · Material 3 + WolfCloud</div>`;
 }
 function changeActiveSchool(id){if(hasSyncBridge()&&id){WolfSync.setActiveSchool(id);toast('Zmieniam aktywną szkołę…')}}
 function renameSchool(){let v=$('#sName')?.value?.trim();if(v){db.school=v;save();settings();toast('Zapisano')}}
@@ -171,8 +251,8 @@ window.wolfNativeExportResult=function(ok,msg){
 }
 function importData(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{db=JSON.parse(r.result);save();render('home');toast('Kopia wczytana')}catch{toast('Nieprawidłowy plik')}};r.readAsText(f)}function resetAll(){if(confirm('Na pewno usunąć cały dziennik lokalnie i w chmurze?')){db={school:'',classes:[],students:[],grades:[],attendance:[],lessons:[],tasks:[],_sync:{updatedAt:Date.now()}};save();setup()}}
 
-let wolfSchool={activeSchoolId:'',schoolName:'',role:'',schools:[],classes:[],students:[],subjects:[],teachers:[],timetable:[]};
-window.wolfSchoolData=function(payload){try{wolfSchool=Object.assign({activeSchoolId:'',schoolName:'',role:'',schools:[],classes:[],students:[],subjects:[],teachers:[],timetable:[]},payload||{});if(wolfSchool.schoolName&&!db.school){db.school=wolfSchool.schoolName;localStorage.setItem(KEY,JSON.stringify(db))}if(currentPage==='plan'||currentPage==='settings'||currentPage==='home')render(currentPage||'home')}catch(e){console.error(e)}};
+let wolfSchool={activeSchoolId:'',schoolName:'',role:'',schools:[],classes:[],students:[],subjects:[],teachers:[],grades:[],tasks:[],attendance:[],timetable:[]};
+window.wolfSchoolData=function(payload){try{wolfSchool=Object.assign({activeSchoolId:'',schoolName:'',role:'',schools:[],classes:[],students:[],subjects:[],teachers:[],grades:[],tasks:[],attendance:[],timetable:[]},payload||{});if(wolfSchool.schoolName&&!db.school){db.school=wolfSchool.schoolName;localStorage.setItem(KEY,JSON.stringify(db))}if(['plan','settings','home','classes','grades','tasks','attendance'].includes(currentPage))render(currentPage||'home')}catch(e){console.error(e)}};
 window.wolfSchoolError=function(message){toast(message||'Nie udało się pobrać danych szkoły')};
 let syncLoggedIn=false,syncEmail='',syncState='offline',syncTitle='Tylko lokalnie',syncDetail='Zaloguj się, aby synchronizować.',syncTimer=null,applyingRemote=false;
 function hasSyncBridge(){return typeof WolfSync!=='undefined'}
