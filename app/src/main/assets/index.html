@@ -1,297 +1,53 @@
 <!doctype html>
 <html lang="pl">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>WolfEdu</title>
-<style>
-:root{
- --primary:#415f91;--on-primary:#fff;--primary-container:#d6e3ff;--on-primary-container:#001b3e;
- --secondary:#565f71;--secondary-container:#dae2f9;--tertiary:#705575;--tertiary-container:#fad8fd;
- --surface:#f9f9ff;--surface-container:#eef0f8;--surface-high:#e8eaf2;--card:#fff;
- --text:#191c20;--muted:#44474e;--outline:#74777f;--line:#c5c6d0;--danger:#ba1a1a;--danger-container:#ffdad6;
- --ok:#2e6b48;--shadow:#00000016;--radius:24px
-}
-html[data-theme='dark']{
- --primary:#aac7ff;--on-primary:#0a305f;--primary-container:#284777;--on-primary-container:#d6e3ff;
- --secondary:#bec6dc;--secondary-container:#3e4759;--tertiary:#ddbce0;--tertiary-container:#573e5c;
- --surface:#111318;--surface-container:#1d2026;--surface-high:#272a30;--card:#1b1e24;
- --text:#e2e2e9;--muted:#c4c6d0;--outline:#8e9099;--line:#44474f;--danger:#ffb4ab;--danger-container:#93000a;
- --ok:#91d5a8;--shadow:#00000055
-}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html{background:var(--surface)}body{margin:0;font-family:Roboto,system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--surface);color:var(--text);min-height:100vh}
-header{position:sticky;top:0;z-index:7;background:color-mix(in srgb,var(--surface) 93%,transparent);backdrop-filter:blur(18px);padding:16px 20px 12px;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent)}
-header h1{margin:0;font-size:26px;line-height:1.15;font-weight:700;letter-spacing:-.4px}header p{margin:5px 0 0;color:var(--muted);font-size:13px}
-main{padding:16px 16px 106px;max-width:760px;margin:auto}.card{background:var(--card);border-radius:var(--radius);padding:18px;margin-bottom:14px;border:1px solid color-mix(in srgb,var(--line) 40%,transparent);box-shadow:0 1px 2px var(--shadow)}
-.row{display:flex;gap:10px;align-items:center}.between{justify-content:space-between}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}h2{font-size:20px;margin:2px 0 14px;letter-spacing:-.2px}h3{font-size:16px;margin:0 0 8px}small,.muted{color:var(--muted);line-height:1.4}
-input,select,textarea{width:100%;min-height:52px;padding:13px 15px;border:1px solid var(--outline);border-radius:16px;background:transparent;color:var(--text);font:inherit;outline:none;margin:6px 0}input:focus,select:focus,textarea:focus{border:2px solid var(--primary);padding:12px 14px}textarea{min-height:92px;resize:vertical}
-button{min-height:44px;border:0;border-radius:999px;padding:10px 18px;font:inherit;font-weight:650;background:var(--primary);color:var(--on-primary);cursor:pointer}button:active{transform:scale(.985)}button:disabled,.btn-busy{opacity:.55;pointer-events:none}button.secondary{background:var(--secondary-container);color:var(--text)}button.danger{background:var(--danger-container);color:var(--danger)}button.mini{min-height:34px;padding:6px 12px;font-size:12px}.btn-full{width:100%}.linkbtn{background:transparent;color:var(--primary);padding:8px 10px;min-height:36px}
-.item{padding:14px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent)}.item:last-child{border-bottom:0}.badge{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;background:var(--primary-container);color:var(--on-primary-container);font-weight:700;font-size:12px}.empty{text-align:center;padding:28px 12px;color:var(--muted)}
-nav{position:fixed;left:10px;right:10px;bottom:10px;z-index:10;display:grid;grid-template-columns:repeat(5,1fr);background:color-mix(in srgb,var(--surface-container) 96%,transparent);backdrop-filter:blur(20px);border:1px solid color-mix(in srgb,var(--line) 50%,transparent);border-radius:28px;padding:7px 6px max(7px,env(safe-area-inset-bottom));box-shadow:0 8px 28px #0002}
-nav button{background:transparent;color:var(--muted);border-radius:20px;padding:6px 2px;min-height:58px;font-size:11px;font-weight:650}nav button.active{color:var(--on-primary-container);background:var(--primary-container)}nav .ico{display:block;font-size:20px;margin:0 auto 3px}
-.hidden{display:none!important}.hero{background:linear-gradient(145deg,var(--primary-container),color-mix(in srgb,var(--tertiary-container) 60%,var(--primary-container)));color:var(--on-primary-container);border:0;position:relative;overflow:hidden;box-shadow:none}.hero:after{content:'W';position:absolute;right:-14px;bottom:-52px;font-size:150px;font-weight:800;opacity:.07}.hero small{color:color-mix(in srgb,var(--on-primary-container) 72%,transparent)}.hero h2{font-size:28px;margin:6px 0 10px}.brand-pill{display:inline-flex;padding:6px 10px;border-radius:999px;background:color-mix(in srgb,var(--card) 45%,transparent);font-size:12px;font-weight:700}
-.quick{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.quick button{min-height:112px;border-radius:22px;background:var(--surface-container);color:var(--text);text-align:left;padding:16px;border:1px solid color-mix(in srgb,var(--line) 35%,transparent)}.quick .qico{display:grid;place-items:center;width:42px;height:42px;border-radius:14px;background:var(--primary-container);font-size:20px;margin-bottom:12px}.quick small{display:block;margin-top:4px}.stat{padding:16px;border-radius:22px;background:var(--surface-container)}.stat b{display:block;font-size:28px;color:var(--primary);margin-top:3px}.progress{height:8px;background:var(--surface-high);border-radius:99px;overflow:hidden;margin-top:10px}.progress span{display:block;height:100%;background:var(--primary);border-radius:99px}.section-title{display:flex;align-items:center;justify-content:space-between;margin:22px 3px 11px}.section-title h2{margin:0}
-.avatar{width:46px;height:46px;border-radius:16px;background:var(--primary-container);display:grid;place-items:center;color:var(--on-primary-container);font-weight:800}.warn{background:var(--tertiary-container);color:var(--text);padding:12px 14px;border-radius:18px;font-size:13px;line-height:1.45}.day{font-weight:800;font-size:14px;margin:18px 0 5px;color:var(--primary)}.lesson{display:flex;gap:12px}.time{min-width:54px;font-weight:800;color:var(--primary)}
-.sync-pill{display:inline-flex;align-items:center;gap:7px;margin-top:10px;padding:7px 11px;border-radius:999px;background:var(--surface-container);font-size:12px;font-weight:700;color:var(--muted)}.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--outline)}.sync-pill.online .sync-dot{background:var(--ok)}.sync-pill.syncing .sync-dot{background:#f2b544;animation:pulse 1s infinite}.sync-pill.pending .sync-dot{background:#e47b45}.sync-box{border-radius:22px;padding:15px;background:var(--surface-container)}.sync-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.sync-email{font-weight:700;color:var(--primary);word-break:break-all}.sync-note{font-size:12px;color:var(--muted);margin-top:10px;line-height:1.45}.sync-state{display:flex;gap:10px;align-items:flex-start;margin-bottom:12px}.sync-state .bigdot{width:12px;height:12px;border-radius:50%;margin-top:4px;background:var(--outline)}.sync-state .bigdot.online{background:var(--ok)}.sync-state .bigdot.syncing{background:#f2b544}.sync-state .bigdot.pending{background:#e47b45}
-.toast{position:fixed;left:50%;bottom:92px;transform:translateX(-50%) translateY(12px);background:#303036;color:white;padding:11px 16px;border-radius:14px;z-index:30;opacity:0;transition:.2s;pointer-events:none;max-width:90%;text-align:center}.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-.splash{position:fixed;inset:0;z-index:999;background:var(--surface);display:grid;place-items:center;transition:opacity .35s,visibility .35s}.splash.hide{opacity:0;visibility:hidden}.splash-logo{width:88px;height:88px;border-radius:28px;background:var(--primary-container);color:var(--on-primary-container);display:grid;place-items:center;font-size:42px;font-weight:800}.splash h1{font-size:32px;margin:16px 0 4px}.splash p{margin:0;color:var(--muted)}.setup{min-height:68vh;display:grid;place-items:center}.setup .card{width:100%;max-width:480px}.switch{display:flex;justify-content:space-between;align-items:center;gap:12px}.version{text-align:center;color:var(--muted);font-size:12px;padding:10px}.task-type,.task-date{font-weight:700}.task-type{font-size:11px;background:var(--secondary-container);padding:5px 8px;border-radius:999px}.task-overdue{border-left:4px solid var(--danger);padding-left:12px}.task-done{opacity:.6}.task-done b{text-decoration:line-through}@keyframes pulse{50%{opacity:.35}}
-@media(max-width:390px){main{padding-left:12px;padding-right:12px}.quick{gap:9px}.grid{grid-template-columns:1fr}.sync-actions{grid-template-columns:1fr}}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <meta name="theme-color" content="#415f91">
+  <title>WolfEdu</title>
+  <link rel="stylesheet" href="css/theme.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/dashboard.css">
 </head>
 <body>
-<div id="splash" class="splash"><div style="text-align:center"><div class="splash-logo">W</div><h1>WolfEdu</h1><p>Szkoła pod kontrolą</p></div></div>
-<header><h1 id="headTitle">WolfEdu</h1><p id="headSub">Twój inteligentny dziennik szkolny</p><div id="syncPill" class="sync-pill"><span class="sync-dot"></span><span id="syncPillText">Tylko lokalnie</span></div></header>
-<main id="app"></main>
-<nav id="nav" class="hidden">
-<button data-page="home"><span class="ico">⌂</span>Start</button>
-<button data-page="grades"><span class="ico">★</span>Oceny</button>
-<button data-page="tasks"><span class="ico">✓</span>Zadania</button>
-<button data-page="plan"><span class="ico">▦</span>Plan</button>
-<button data-page="settings"><span class="ico">⚙</span>Więcej</button>
-</nav><div id="toast" class="toast"></div>
-<script>
-const KEY='wolfEduDataV1';
-let db=JSON.parse(localStorage.getItem(KEY)||'null')||{school:'',classes:[],students:[],grades:[],attendance:[],lessons:[],tasks:[]};
-let page='home',editingGradeId=null; const $=s=>document.querySelector(s); const app=$('#app');
-function migrate(){db.grades=(db.grades||[]).map(g=>({...g,weight:Number(g.weight||1)}));db.subjects=db.subjects||[];db.tasks=(db.tasks||[]).map(t=>({...t,done:Boolean(t.done),type:t.type||'Zadanie domowe',priority:t.priority||'Normalny'}));save()}
-function save(){db._sync=db._sync||{};db._sync.updatedAt=Date.now();localStorage.setItem(KEY,JSON.stringify(db));scheduleCloudSync()}function id(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}function toast(t){let x=$('#toast');x.textContent=t;x.classList.add('show');setTimeout(()=>x.classList.remove('show'),1700)}
-function setHead(t,s){$('#headTitle').textContent=t;$('#headSub').textContent=s||db.school}
-function setup(){setHead('WolfEdu','Pierwsza konfiguracja');$('#nav').classList.add('hidden');app.innerHTML=`<section class="setup"><div class="card"><h2>Utwórz swoją szkołę</h2><p class="muted">Dane zostają wyłącznie na tym telefonie.</p><input id="school" placeholder="Nazwa szkoły, np. SP 35 w Gdyni"><button style="width:100%;margin-top:8px" onclick="createSchool()">Uruchom WolfEdu</button></div></section>`}
-function createSchool(){let v=$('#school').value.trim();if(!v)return toast('Wpisz nazwę szkoły');db.school=v;save();render('home')}
-function render(p=page){page=p;if(!db.school&&!wolfSchool.schoolName)return setup();$('#nav').classList.remove('hidden');document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===page));({home,classes,grades,tasks,attendance,plan,settings}[page]||home)()}
-function home(){
-  let displaySchool=wolfSchool.schoolName||db.school||'WolfEdu';
-  setHead(displaySchool,new Date().toLocaleDateString('pl-PL',{weekday:'long',day:'numeric',month:'long'}));
-  let cloud=!!wolfSchool.activeSchoolId;
-  let gradesSrc=cloud?(wolfSchool.grades||[]):db.grades;
-  let tasksSrc=cloud?(wolfSchool.tasks||[]):db.tasks;
-  let attendanceSrc=cloud?(wolfSchool.attendance||[]):db.attendance;
-  let studentsCount=cloud?(wolfSchool.students||[]).length:db.students.length;
-  let totalWeight=gradesSrc.reduce((a,g)=>a+Number(g.weight||1),0);
-  let avg=totalWeight?(gradesSrc.reduce((a,g)=>a+Number(g.value||0)*Number(g.weight||1),0)/totalWeight).toFixed(2):'—';
-  let total=attendanceSrc.length,present=attendanceSrc.filter(a=>a.state==='Obecny').length;
-  let att=total?Math.round(present/total*100):'—';
-  let nextText='Brak lekcji na dziś.';
-  if(cloud&&wolfSchool.timetable?.length){
-    let day=new Date().getDay()||7,selected=localStorage.getItem('wolfEduPlanClass')||wolfSchool.classes?.[0]?.id||'',now=new Date().toTimeString().slice(0,5);
-    let lessons=wolfSchool.timetable.filter(l=>l.classId===selected&&Number(l.day)===day).sort((a,b)=>(a.start||'99:99').localeCompare(b.start||'99:99'));
-    let n=lessons.find(l=>!l.end||l.end>=now)||lessons[0];
-    if(n){let sub=wolfSchool.subjects.find(s=>s.id===n.subjectId);nextText=`Następna: <b>${esc(sub?.name||'Przedmiot')}</b>${n.start?' · '+esc(n.start):''}`}
-  }
-  let activeTasks=tasksSrc.filter(t=>!t.done).sort((a,b)=>String(a.due||'').localeCompare(String(b.due||''))).slice(0,3);
-  app.innerHTML=`<div class="card hero"><span class="brand-pill">WolfEdu · Material 3</span><small>${cloud?'WolfCloud połączony':'Tryb lokalny'}</small><h2>${esc(displaySchool)}</h2><div>${nextText}</div></div>
-  <div class="section-title"><h2>Najważniejsze</h2></div>
-  <div class="quick">
-    <button onclick="render('grades')"><span class="qico">★</span><b>Oceny</b><small>${cloud?'Realtime':'Lokalnie'}</small></button>
-    <button onclick="render('plan')"><span class="qico">▦</span><b>Plan lekcji</b><small>${cloud?'Realtime':'Lokalnie'}</small></button>
-    <button onclick="render('tasks')"><span class="qico">✓</span><b>Zadania</b><small>${cloud?'Realtime':'Lokalnie'}</small></button>
-    <button onclick="render('attendance')"><span class="qico">◷</span><b>Frekwencja</b><small>${cloud?'Realtime':'Lokalnie'}</small></button>
-    <button onclick="render('classes')"><span class="qico">♙</span><b>Klasy i uczniowie</b><small>${studentsCount} uczniów</small></button>
-    <button onclick="render('settings')"><span class="qico">⚙</span><b>Ustawienia</b><small>Konto i synchronizacja</small></button>
+  <div id="splash" class="splash">
+    <div style="text-align:center">
+      <div class="splash-logo">W</div>
+      <h1>WolfEdu</h1>
+      <p>Szkoła pod kontrolą</p>
+    </div>
   </div>
-  <div class="section-title"><h2>Podsumowanie</h2></div>
-  <div class="grid"><div class="stat"><small>Średnia ocen</small><b>${avg}</b></div><div class="stat"><small>Frekwencja</small><b>${att==='—'?'—':att+'%'}</b></div></div>
-  <div class="card" style="margin-top:14px"><div class="row between"><div><h2 style="margin:0">Najbliższe terminy</h2><small>${activeTasks.length?'Do zrobienia':'Wszystko ogarnięte'}</small></div><button class="linkbtn" onclick="render('tasks')">Wszystkie</button></div>${activeTasks.map(t=>`<div class="item row between"><div><b>${esc(t.title||'Zadanie')}</b><br><small>${esc(t.due||'Bez terminu')}</small></div><span class="badge">${esc(t.type||'Zadanie')}</span></div>`).join('')||'<div class="empty">Brak aktywnych zadań</div>'}</div>`;
-}
-function classes(){
-  let cloudMode=!!wolfSchool.activeSchoolId;
-  setHead('Klasy i uczniowie',wolfSchool.schoolName||db.school);
 
-  if(cloudMode){
-    let cloudClasses=wolfSchool.classes||[], cloudStudents=wolfSchool.students||[];
-    app.innerHTML=`<div class="card"><div class="row between"><div><h2 style="margin:0">Dane szkoły</h2><small>Synchronizacja realtime z panelem WWW</small></div><span class="badge">${esc(wolfSchool.role||'użytkownik')}</span></div><div class="warn" style="margin-top:10px">Edycja klas i uczniów jest teraz wykonywana w Panelu WWW, żeby Android i WWW nie tworzyły dwóch różnych wersji danych.</div></div>
-    ${cloudClasses.map(c=>`<div class="card"><div class="row between"><div><h2 style="margin:0">Klasa ${esc(c.name)}</h2><small>${cloudStudents.filter(s=>s.classId===c.id).length} uczniów</small></div></div>
-    ${cloudStudents.filter(s=>s.classId===c.id).map(s=>`<div class="item row between"><div class="row"><div class="avatar">${esc((s.name||'?').slice(0,1).toUpperCase())}</div><div><b>${esc(s.name||'Uczeń')}</b><br><small>${s.number?'nr '+esc(s.number):''}${s.email?' · '+esc(s.email):''}</small></div></div></div>`).join('')||'<div class="empty">Brak uczniów</div>'}</div>`).join('')||'<div class="card empty">Brak klas w tej szkole.</div>'}`;
-    return;
-  }
+  <header>
+    <h1 id="headTitle">WolfEdu</h1>
+    <p id="headSub">Twój inteligentny dziennik szkolny</p>
+    <div id="syncPill" class="sync-pill">
+      <span class="sync-dot"></span>
+      <span id="syncPillText">Tylko lokalnie</span>
+    </div>
+  </header>
 
-  app.innerHTML=`<div class="card warn"><b>Tryb lokalny / legacy</b><br>Po przypisaniu konta do szkoły dane klas będą pobierane z WolfCloud.</div><div class="card"><h2>Dodaj klasę</h2><div class="row"><input id="className" placeholder="np. 8B"><button onclick="addClass()">Dodaj</button></div></div>${db.classes.map(c=>`<div class="card"><div class="row between"><div><h2 style="margin:0">Klasa ${esc(c.name)}</h2><small>${db.students.filter(s=>s.classId===c.id).length} uczniów</small></div><button class="danger mini" onclick="removeClass('${c.id}')">Usuń</button></div><div class="row" style="margin-top:10px"><input id="student-${c.id}" placeholder="Imię i nazwisko ucznia"><button onclick="addStudent('${c.id}')">Dodaj</button></div>${db.students.filter(s=>s.classId===c.id).map(s=>`<div class="item row between"><div class="row"><div class="avatar">${esc(s.name.slice(0,1).toUpperCase())}</div><b>${esc(s.name)}</b></div><button class="danger mini" onclick="removeStudent('${s.id}')">×</button></div>`).join('')||'<div class="empty">Brak uczniów</div>'}</div>`).join('')||'<div class="card empty">Najpierw dodaj klasę.</div>'}`;
-}
-function addClass(){let v=$('#className').value.trim();if(!v)return;db.classes.push({id:id(),name:v});save();classes()}function removeClass(cid){if(!confirm('Usunąć klasę i jej dane?'))return;let ids=db.students.filter(s=>s.classId===cid).map(s=>s.id);db.classes=db.classes.filter(c=>c.id!==cid);db.students=db.students.filter(s=>s.classId!==cid);db.grades=db.grades.filter(g=>!ids.includes(g.studentId));db.attendance=db.attendance.filter(a=>!ids.includes(a.studentId));save();classes()}function addStudent(cid){let e=$('#student-'+cid),v=e.value.trim();if(!v)return;db.students.push({id:id(),classId:cid,name:v});save();classes()}function removeStudent(sid){db.students=db.students.filter(s=>s.id!==sid);db.grades=db.grades.filter(g=>g.studentId!==sid);db.attendance=db.attendance.filter(a=>a.studentId!==sid);save();classes()}
-function studentOptions(){return db.students.map(s=>{let c=db.classes.find(x=>x.id===s.classId);return `<option value="${s.id}">${esc(s.name)} (${esc(c?.name||'?')})</option>`}).join('')}
-function uniqueSubjects(){return [...new Set(db.grades.map(g=>g.subject.trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pl'))}
-function weightedAverage(list){let w=list.reduce((a,g)=>a+Number(g.weight||1),0);return w?list.reduce((a,g)=>a+Number(g.value)*Number(g.weight||1),0)/w:null}
-function grades(){
-  if(!wolfSchool.activeSchoolId){
-    setHead('Oceny',db.school);
-    app.innerHTML=`<div class="card warn"><b>Tryb legacy</b><br>Brak aktywnej szkoły WolfCloud.</div><div class="card"><h2>Oceny lokalne</h2>${db.grades.map(g=>`<div class="item"><b>${esc(g.subject||'Przedmiot')}</b> · ${esc(g.value)} (waga ${esc(g.weight||1)})</div>`).join('')||'<div class="empty">Brak ocen</div>'}</div>`;
-    return;
-  }
-  setHead('Oceny',wolfSchool.schoolName);
-  let students=wolfSchool.students||[],subjects=wolfSchool.subjects||[],teachers=wolfSchool.teachers||[],list=wolfSchool.grades||[];
-  app.innerHTML=`<div class="card"><h2>Dodaj ocenę</h2>
-  <select id="cgStudent"><option value="">Uczeń</option>${students.map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('')}</select>
-  <select id="cgSubject"><option value="">Przedmiot</option>${subjects.map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('')}</select>
-  <select id="cgTeacher"><option value="">Nauczyciel (opcjonalnie)</option>${teachers.map(t=>`<option value="${esc(t.id)}">${esc(t.name)}</option>`).join('')}</select>
-  <div class="grid"><select id="cgValue">${[1,2,3,4,5,6].map(v=>`<option>${v}</option>`).join('')}</select><select id="cgWeight">${[1,2,3,4,5,6].map(v=>`<option value="${v}">Waga ${v}</option>`).join('')}</select></div>
-  <input id="cgCategory" placeholder="Kategoria, np. sprawdzian"><input id="cgComment" placeholder="Komentarz">
-  <input id="cgDate" type="date" value="${new Date().toISOString().slice(0,10)}">
-  <button style="width:100%" onclick="addCloudGrade(this)">Dodaj ocenę</button></div>
-  <div class="card"><h2>Oceny realtime</h2>${list.slice().reverse().map(g=>`<div class="item row between"><div><b>${esc(subjects.find(s=>s.id===g.subjectId)?.name||'Przedmiot')}</b><br><small>${esc(students.find(s=>s.id===g.studentId)?.name||'Uczeń')} · ${esc(g.category||'Ocena')}</small></div><div class="row"><span class="badge">${esc(g.value)} · waga ${esc(g.weight||1)}</span><button class="danger mini" onclick="WolfSync.deleteGrade('${g.id}')">×</button></div></div>`).join('')||'<div class="empty">Brak ocen</div>'}</div>`;
-}
-function addCloudGrade(btn){
-  let student=$('#cgStudent').value,subject=$('#cgSubject').value;
-  if(!student||!subject)return toast('Wybierz ucznia i przedmiot');
-  btn.disabled=true;btn.textContent='Dodaję…';
-  WolfSync.addGrade(student,subject,$('#cgTeacher').value,Number($('#cgValue').value),Number($('#cgWeight').value),$('#cgCategory').value.trim(),$('#cgComment').value.trim(),$('#cgDate').value);
-}
-function saveGrade(){let studentId=$('#gStudent').value,subject=$('#gSubject').value.trim(),value=$('#gValue').value,weight=Number($('#gWeight').value),note=$('#gNote').value.trim();if(!studentId||!subject)return toast('Wybierz ucznia i przedmiot');if(editingGradeId){let g=db.grades.find(x=>x.id===editingGradeId);if(g)Object.assign(g,{studentId,subject,value,weight,note});editingGradeId=null;toast('Ocena zmieniona')}else{db.grades.push({id:id(),studentId,subject,value,weight,note,date:new Date().toISOString()});toast('Ocena dodana')}save();grades()}
-function editGrade(i){editingGradeId=i;grades();window.scrollTo(0,0)}function cancelGradeEdit(){editingGradeId=null;grades()}function delGrade(i){if(!confirm('Usunąć tę ocenę?'))return;db.grades=db.grades.filter(g=>g.id!==i);if(editingGradeId===i)editingGradeId=null;save();grades()}
-function setGradeFilter(){sessionStorage.setItem('gradeStudent',$('#gradeFilterStudent').value);sessionStorage.setItem('gradeSubject',$('#gradeFilterSubject').value);grades()}
-function calculateNeededGrade(){let sid=$('#calcStudent').value,subject=$('#calcSubject').value,target=Number($('#calcTarget').value),newWeight=Number($('#calcWeight').value),out=$('#calcOutput');if(!sid||!subject||!target)return toast('Uzupełnij ucznia, przedmiot i średnią');let list=db.grades.filter(g=>g.studentId===sid&&g.subject===subject),sum=list.reduce((a,g)=>a+Number(g.value)*Number(g.weight||1),0),weights=list.reduce((a,g)=>a+Number(g.weight||1),0),current=weights?sum/weights:0,needed=(target*(weights+newWeight)-sum)/newWeight;let text;if(needed<=1)text=`Wystarczy ocena <b>1</b> lub wyższa.`;else if(needed>6)text=`Jedna ocena z wagą ${newWeight} nie wystarczy — potrzeba matematycznie <b>${needed.toFixed(2)}</b>.`;else text=`Potrzebujesz co najmniej <b>${Math.ceil(needed)}</b> <small>(dokładnie ${needed.toFixed(2)})</small>.`;out.innerHTML=`<div class="calc-result"><small>Obecna średnia: ${current?current.toFixed(2):'brak ocen'}</small>${text}</div>`}
-let editingTaskId=null;
-function taskDateLabel(d){if(!d)return 'Brak terminu';let date=new Date(d+'T12:00:00'),today=new Date();today.setHours(0,0,0,0);let tomorrow=new Date(today);tomorrow.setDate(today.getDate()+1);if(date.getTime()===today.getTime())return 'Dzisiaj';if(date.getTime()===tomorrow.getTime())return 'Jutro';return date.toLocaleDateString('pl-PL',{day:'2-digit',month:'2-digit',year:'numeric'})}
-function tasks(){
-  if(!wolfSchool.activeSchoolId){
-    setHead('Zadania',db.school);
-    app.innerHTML=`<div class="card warn"><b>Tryb legacy</b><br>Brak aktywnej szkoły WolfCloud.</div><div class="card">${db.tasks.map(t=>`<div class="item">${esc(t.title)}</div>`).join('')||'<div class="empty">Brak zadań</div>'}</div>`;
-    return;
-  }
-  setHead('Zadania',wolfSchool.schoolName);
-  let classes=wolfSchool.classes||[],students=wolfSchool.students||[],subjects=wolfSchool.subjects||[],teachers=wolfSchool.teachers||[],list=wolfSchool.tasks||[];
-  app.innerHTML=`<div class="card"><h2>Dodaj zadanie</h2><input id="ctTitle" placeholder="Tytuł">
-  <select id="ctClass"><option value="">Klasa (opcjonalnie)</option>${classes.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('')}</select>
-  <select id="ctStudent"><option value="">Uczeń (opcjonalnie)</option>${students.map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('')}</select>
-  <select id="ctSubject"><option value="">Przedmiot</option>${subjects.map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('')}</select>
-  <select id="ctTeacher"><option value="">Nauczyciel (opcjonalnie)</option>${teachers.map(t=>`<option value="${esc(t.id)}">${esc(t.name)}</option>`).join('')}</select>
-  <select id="ctType"><option>Zadanie domowe</option><option>Sprawdzian</option><option>Kartkówka</option><option>Projekt</option></select>
-  <input id="ctDue" type="date"><input id="ctNote" placeholder="Notatka">
-  <button style="width:100%" onclick="addCloudTask(this)">Dodaj zadanie</button></div>
-  <div class="card"><h2>Zadania realtime</h2>${list.slice().reverse().map(t=>`<div class="item row between"><div><b>${esc(t.title||'Zadanie')}</b><br><small>${esc(subjects.find(s=>s.id===t.subjectId)?.name||'')} · ${esc(t.due||'')}</small></div><button class="secondary mini" onclick="WolfSync.setTaskDone('${t.id}',${!t.done})">${t.done?'Przywróć':'Gotowe'}</button></div>`).join('')||'<div class="empty">Brak zadań</div>'}</div>`;
-}
-function addCloudTask(btn){
-  let title=$('#ctTitle').value.trim(),subject=$('#ctSubject').value;
-  if(!title||!subject)return toast('Wpisz tytuł i wybierz przedmiot');
-  btn.disabled=true;btn.textContent='Dodaję…';
-  WolfSync.addTask($('#ctClass').value,$('#ctStudent').value,subject,$('#ctTeacher').value,title,$('#ctType').value,$('#ctNote').value.trim(),$('#ctDue').value);
-}
-function saveTask(){let title=$('#tTitle').value.trim(),subject=$('#tSubject').value.trim(),due=$('#tDue').value,type=$('#tType').value,priority=$('#tPriority').value,note=$('#tNote').value.trim();if(!title||!due)return toast('Wpisz nazwę i termin');if(editingTaskId){let t=db.tasks.find(x=>x.id===editingTaskId);if(t)Object.assign(t,{title,subject,due,type,priority,note});editingTaskId=null;toast('Termin zmieniony')}else{db.tasks.push({id:id(),title,subject,due,type,priority,note,done:false,created:new Date().toISOString()});toast('Termin dodany')}save();tasks()}
-function editTask(i){editingTaskId=i;tasks();window.scrollTo(0,0)}function cancelTaskEdit(){editingTaskId=null;tasks()}function toggleTask(i){let t=db.tasks.find(x=>x.id===i);if(t){t.done=!t.done;save();tasks();toast(t.done?'Oznaczono jako wykonane':'Przywrócono termin')}}function deleteTask(i){if(!confirm('Usunąć ten termin?'))return;db.tasks=db.tasks.filter(t=>t.id!==i);if(editingTaskId===i)editingTaskId=null;save();tasks()}function setTaskFilter(v){sessionStorage.setItem('taskFilter',v);tasks()}
-function attendance(){
-  if(!wolfSchool.activeSchoolId){
-    setHead('Frekwencja',db.school);
-    app.innerHTML=`<div class="card warn"><b>Tryb legacy</b><br>Brak aktywnej szkoły WolfCloud.</div><div class="card">${db.attendance.map(a=>`<div class="item">${esc(a.state)}</div>`).join('')||'<div class="empty">Brak wpisów</div>'}</div>`;
-    return;
-  }
-  setHead('Frekwencja',wolfSchool.schoolName);
-  let classes=wolfSchool.classes||[],students=wolfSchool.students||[],subjects=wolfSchool.subjects||[],teachers=wolfSchool.teachers||[],list=wolfSchool.attendance||[];
-  app.innerHTML=`<div class="card"><h2>Dodaj wpis</h2>
-  <select id="caStudent"><option value="">Uczeń</option>${students.map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('')}</select>
-  <select id="caClass"><option value="">Klasa</option>${classes.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('')}</select>
-  <select id="caSubject"><option value="">Przedmiot</option>${subjects.map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('')}</select>
-  <select id="caTeacher"><option value="">Nauczyciel (opcjonalnie)</option>${teachers.map(t=>`<option value="${esc(t.id)}">${esc(t.name)}</option>`).join('')}</select>
-  <input id="caDate" type="date" value="${new Date().toISOString().slice(0,10)}">
-  <div class="grid"><select id="caState"><option>Obecny</option><option>Nieobecny</option><option>Spóźniony</option><option>Zwolniony</option><option>Usprawiedliwiony</option></select><input id="caLesson" type="number" min="1" value="1"></div>
-  <button style="width:100%" onclick="addCloudAttendance(this)">Dodaj wpis</button></div>
-  <div class="card"><h2>Frekwencja realtime</h2>${list.slice().reverse().map(a=>`<div class="item row between"><div><b>${esc(students.find(s=>s.id===a.studentId)?.name||'Uczeń')}</b><br><small>${esc(a.date||'')} · lekcja ${esc(a.lesson||'')}</small></div><span class="badge">${esc(a.state||'')}</span></div>`).join('')||'<div class="empty">Brak wpisów</div>'}</div>`;
-}
-function addCloudAttendance(btn){
-  let student=$('#caStudent').value,klass=$('#caClass').value;
-  if(!student||!klass)return toast('Wybierz ucznia i klasę');
-  btn.disabled=true;btn.textContent='Dodaję…';
-  WolfSync.addAttendance(student,klass,$('#caSubject').value,$('#caTeacher').value,$('#caDate').value,$('#caState').value,Number($('#caLesson').value||1));
-}
-function addAttendance(){let studentId=$('#aStudent').value,date=$('#aDate').value,state=$('#aState').value;if(!studentId)return toast('Wybierz ucznia');db.attendance.push({id:id(),studentId,date,state});save();attendance();toast('Frekwencja zapisana')}function delAttendance(i){db.attendance=db.attendance.filter(a=>a.id!==i);save();attendance()}
-const days=['Poniedziałek','Wtorek','Środa','Czwartek','Piątek'];
-function plan(){
-  let schoolName=wolfSchool.schoolName||db.school;setHead('Plan lekcji',schoolName);
-  if(wolfSchool.activeSchoolId&&wolfSchool.classes.length){
-    let selected=localStorage.getItem('wolfEduPlanClass')||wolfSchool.classes[0].id;
-    if(!wolfSchool.classes.some(c=>c.id===selected))selected=wolfSchool.classes[0].id;
-    localStorage.setItem('wolfEduPlanClass',selected);
-    let classOptions=wolfSchool.classes.map(c=>`<option value="${esc(c.id)}" ${c.id===selected?'selected':''}>${esc(c.name||'Klasa')}</option>`).join('');
-    let rows=days.map((d,idx)=>{let items=wolfSchool.timetable.filter(l=>l.classId===selected&&Number(l.day)===idx+1).sort((a,b)=>Number(a.lesson)-Number(b.lesson));return `<div class="day">${d}</div>${items.map(l=>{let sub=wolfSchool.subjects.find(x=>x.id===l.subjectId),tea=wolfSchool.teachers.find(x=>x.id===l.teacherId);return `<div class="item lesson"><div class="time">${esc(l.start||('#'+l.lesson))}</div><div style="flex:1"><b>${esc(sub?.name||'Przedmiot')}</b><br><small>${tea?.name?esc(tea.name)+' · ':''}${l.room?'sala '+esc(l.room):''}${l.end?' · do '+esc(l.end):''}</small></div><span class="badge">${esc(l.lesson)}</span></div>`}).join('')||'<small>Brak lekcji</small>'}`}).join('');
-    app.innerHTML=`<div class="card"><div class="row between"><div><h2 style="margin:0">Plan z WolfCloud</h2><small>${esc(schoolName)} · synchronizacja realtime</small></div><span class="badge">${esc(wolfSchool.role||'użytkownik')}</span></div><select id="cloudPlanClass" onchange="changeCloudPlanClass(this.value)">${classOptions}</select></div><div class="card"><h2>Plan klasy</h2>${rows}</div><div class="card"><small>Plan jest zarządzany w panelu WWW. Zmiany pojawiają się tutaj automatycznie.</small></div>`;
-    return;
-  }
-  app.innerHTML=`<div class="card warn"><b>Plan lokalny (legacy)</b><br>Połącz konto ze szkołą w Panelu WWW, aby korzystać z planu synchronizowanego realtime.</div><div class="card"><h2>Dodaj lekcję lokalnie</h2><select id="pDay">${days.map(d=>`<option>${d}</option>`).join('')}</select><div class="grid"><input id="pTime" type="time"><input id="pSubject" placeholder="Przedmiot"></div><input id="pRoom" placeholder="Sala / nauczyciel (opcjonalnie)"><button style="width:100%;margin-top:6px" onclick="addLesson()">Dodaj do planu</button></div><div class="card"><h2>Twój plan lokalny</h2>${days.map(d=>`<div class="day">${d}</div>${db.lessons.filter(l=>l.day===d).sort((a,b)=>a.time.localeCompare(b.time)).map(l=>`<div class="item lesson"><div class="time">${esc(l.time)}</div><div style="flex:1"><b>${esc(l.subject)}</b><br><small>${esc(l.room||'')}</small></div><button class="danger mini" onclick="delLesson('${l.id}')">×</button></div>`).join('')||'<small>Brak lekcji</small>'}`).join('')}</div>`
-}
-function changeCloudPlanClass(v){localStorage.setItem('wolfEduPlanClass',v);plan()}
-function addLesson(){let day=$('#pDay').value,time=$('#pTime').value,subject=$('#pSubject').value.trim(),room=$('#pRoom').value.trim();if(!time||!subject)return toast('Uzupełnij godzinę i przedmiot');db.lessons.push({id:id(),day,time,subject,room});save();plan()}function delLesson(i){db.lessons=db.lessons.filter(l=>l.id!==i);save();plan()}
-function settings(){
-  setHead('Ustawienia',wolfSchool.schoolName||db.school);
-  let dark=localStorage.getItem('wolfEduTheme')==='dark';
-  let schoolOptions=(wolfSchool.schools||[]).map(s=>`<option value="${esc(s.id)}" ${s.id===wolfSchool.activeSchoolId?'selected':''}>${esc(s.name||'Szkoła')}</option>`).join('');
+  <main id="app"></main>
 
-  app.innerHTML=`<div class="card"><h2>Profil WolfEdu</h2>
-  ${syncLoggedIn?`<div class="row"><div class="avatar">${esc((syncEmail||'?')[0].toUpperCase())}</div><div><b>${esc(syncEmail)}</b><br><small>Rola: ${esc(wolfSchool.role||'brak')} · ${esc(wolfSchool.schoolName||'brak aktywnej szkoły')}</small></div></div>
-  ${schoolOptions?`<select id="activeSchoolSelect" onchange="changeActiveSchool(this.value)">${schoolOptions}</select>`:'<div class="warn" style="margin-top:10px">Nie znaleziono szkół przypisanych do tego konta.</div>'}`
-  :'<div class="muted">Zaloguj się do WolfCloud, aby pobrać profil i szkołę.</div>'}</div>
+  <nav id="nav" class="hidden">
+    <button data-page="home"><span class="ico">⌂</span>Start</button>
+    <button data-page="grades"><span class="ico">★</span>Oceny</button>
+    <button data-page="tasks"><span class="ico">✓</span>Zadania</button>
+    <button data-page="plan"><span class="ico">▦</span>Plan</button>
+    <button data-page="settings"><span class="ico">⚙</span>Więcej</button>
+  </nav>
 
-  <div class="card"><h2>WolfCloud</h2><div class="sync-box">
-  ${syncLoggedIn?`<div class="sync-state"><span class="bigdot ${syncState}"></span><div><b>${esc(syncTitle)}</b><br><small>${esc(syncDetail)}</small></div></div>
-  <div class="sync-email">${esc(syncEmail)}</div>
-  <div class="sync-actions"><button onclick="syncNow(this)">Synchronizuj teraz</button><button class="secondary" onclick="logoutSync(this)">Wyloguj</button></div>
-  <div class="sync-note">Szkoła, klasy, uczniowie, przedmioty, nauczyciele, plan, oceny, zadania i frekwencja korzystają z WolfCloud realtime.</div>`
-  :`<div class="sync-state"><span class="bigdot"></span><div><b>Połącz urządzenia</b><br><small>Zaloguj się lub utwórz konto.</small></div></div><input id="syncEmail" type="email" autocomplete="email" placeholder="Adres e-mail"><input id="syncPassword" type="password" autocomplete="current-password" placeholder="Hasło (minimum 6 znaków)"><div class="sync-actions"><button onclick="loginSync(this)">Zaloguj</button><button class="secondary" onclick="registerSync(this)">Utwórz konto</button></div>`}
-  </div></div>
+  <div id="toast" class="toast"></div>
 
-  <div class="card"><h2>Wygląd</h2><div class="switch"><div><b>Tryb ciemny</b><br><small>Przyciemnia interfejs aplikacji</small></div><button class="secondary" onclick="toggleTheme()">${dark?'Wyłącz':'Włącz'}</button></div></div>
-
-  <div class="card"><h2>Kopia danych lokalnych</h2><small>Eksport zapisuje lokalną kopię awaryjną. Dane szkolne synchronizowane przez WolfCloud pozostają w Firestore.</small><button class="btn-full" style="margin-top:10px" onclick="exportData(this)">Eksportuj kopię JSON</button><label><input id="importFile" type="file" accept="application/json" style="margin-top:10px" onchange="importData(event)"></label></div>
-
-  <div class="version">WolfEdu 0.9.5-beta.2 · Material 3 + WolfCloud</div>`;
-}
-function changeActiveSchool(id){if(hasSyncBridge()&&id){WolfSync.setActiveSchool(id);toast('Zmieniam aktywną szkołę…')}}
-function renameSchool(){let v=$('#sName')?.value?.trim();if(v){db.school=v;save();settings();toast('Zapisano')}}
-function exportData(btn){
-  if(btn){btn.classList.add('btn-busy');btn.textContent='Otwieram zapis…'}
-  let json=JSON.stringify(db,null,2);
-  if(typeof WolfNative!=='undefined'&&WolfNative.exportJson){
-    WolfNative.exportJson(json);
-  }else{
-    let blob=new Blob([json],{type:'application/json'}),a=document.createElement('a');
-    a.href=URL.createObjectURL(blob);a.download='wolfedu-kopia.json';a.click();
-    setTimeout(()=>URL.revokeObjectURL(a.href),1000);
-    if(btn){btn.classList.remove('btn-busy');btn.textContent='Eksportuj kopię JSON'}
-  }
-}
-window.wolfNativeExportResult=function(ok,msg){
-  toast(msg|| (ok?'Kopia zapisana':'Nie udało się zapisać'));
-  if(currentPage==='settings')settings();
-}
-function importData(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{db=JSON.parse(r.result);save();render('home');toast('Kopia wczytana')}catch{toast('Nieprawidłowy plik')}};r.readAsText(f)}function resetAll(){if(confirm('Na pewno usunąć cały dziennik lokalnie i w chmurze?')){db={school:'',classes:[],students:[],grades:[],attendance:[],lessons:[],tasks:[],_sync:{updatedAt:Date.now()}};save();setup()}}
-
-let wolfSchool={activeSchoolId:'',schoolName:'',role:'',schools:[],classes:[],students:[],subjects:[],teachers:[],grades:[],tasks:[],attendance:[],timetable:[]};
-window.wolfSchoolData=function(payload){try{wolfSchool=Object.assign({activeSchoolId:'',schoolName:'',role:'',schools:[],classes:[],students:[],subjects:[],teachers:[],grades:[],tasks:[],attendance:[],timetable:[]},payload||{});if(wolfSchool.schoolName&&!db.school){db.school=wolfSchool.schoolName;localStorage.setItem(KEY,JSON.stringify(db))}if(['plan','settings','home','classes','grades','tasks','attendance'].includes(currentPage))render(currentPage||'home')}catch(e){console.error(e)}};
-window.wolfSchoolError=function(message){toast(message||'Nie udało się pobrać danych szkoły')};
-let syncLoggedIn=false,syncEmail='',syncState='offline',syncTitle='Tylko lokalnie',syncDetail='Zaloguj się, aby synchronizować.',syncTimer=null,applyingRemote=false;
-function hasSyncBridge(){return typeof WolfSync!=='undefined'}
-function updateSyncPill(){let pill=$('#syncPill'),txt=$('#syncPillText');if(!pill||!txt)return;pill.className='sync-pill '+syncState;txt.textContent=syncTitle}
-function scheduleCloudSync(){if(applyingRemote||!syncLoggedIn||!hasSyncBridge())return;clearTimeout(syncTimer);syncState='syncing';syncTitle='Oczekuje na synchronizację';syncDetail='Zmiana zostanie wysłana automatycznie.';updateSyncPill();syncTimer=setTimeout(()=>WolfSync.syncData(JSON.stringify(db),Number(db?._sync?.updatedAt||Date.now())),650)}
-function syncNow(btn){
-  if(!syncLoggedIn)return toast('Najpierw się zaloguj');
-  if(btn){btn.classList.add('btn-busy');btn.textContent='Synchronizuję…'}
-  db._sync=db._sync||{};db._sync.updatedAt=Date.now();localStorage.setItem(KEY,JSON.stringify(db));
-  if(hasSyncBridge()){
-    WolfSync.syncData(JSON.stringify(db),db._sync.updatedAt);
-    WolfSync.requestRemoteData();
-    WolfSync.requestSchoolData();
-  }
-  setTimeout(()=>{if(currentPage==='settings')settings()},900);
-}
-function loginSync(btn){
-  let e=$('#syncEmail')?.value.trim(),p=$('#syncPassword')?.value||'';
-  if(!e||p.length<6)return toast('Wpisz e-mail i hasło min. 6 znaków');
-  if(btn){btn.classList.add('btn-busy');btn.textContent='Logowanie…'}
-  WolfSync.login(e,p);syncState='syncing';syncTitle='Logowanie…';updateSyncPill()
-}
-function registerSync(btn){
-  let e=$('#syncEmail')?.value.trim(),p=$('#syncPassword')?.value||'';
-  if(!e||p.length<6)return toast('Wpisz e-mail i hasło min. 6 znaków');
-  if(btn){btn.classList.add('btn-busy');btn.textContent='Tworzenie…'}
-  WolfSync.register(e,p);syncState='syncing';syncTitle='Tworzenie konta…';updateSyncPill()
-}
-function logoutSync(btn){
-  if(!syncLoggedIn)return;
-  if(btn){btn.classList.add('btn-busy');btn.textContent='Wylogowuję…'}
-  syncState='syncing';syncTitle='Wylogowywanie…';syncDetail='Kończenie sesji WolfCloud.';updateSyncPill();
-  WolfSync.logout();
-}
-window.wolfSyncAuth=function(logged,email){syncLoggedIn=!!logged;syncEmail=email||'';syncState=logged?'online':'offline';syncTitle=logged?'Połączono':'Tylko lokalnie';syncDetail=logged?'Synchronizacja jest aktywna.':'Zaloguj się, aby synchronizować.';updateSyncPill();if(logged&&hasSyncBridge()){WolfSync.requestRemoteData();WolfSync.requestSchoolData();}if(currentPage==='settings')settings()}
-window.wolfSyncStatus=function(title,detail,state){syncTitle=title||'Synchronizacja';syncDetail=detail||'';syncState=state||'offline';updateSyncPill();if(currentPage==='settings')settings()}
-window.wolfSyncError=function(message){syncState='pending';syncTitle='Błąd synchronizacji';syncDetail=message||'Nie udało się połączyć.';updateSyncPill();toast(syncDetail);if(currentPage==='settings')settings()}
-window.wolfSyncRemote=function(json,updatedAt){try{let remote=JSON.parse(json),localTime=Number(db?._sync?.updatedAt||0),remoteTime=Number(updatedAt||remote?._sync?.updatedAt||0);if(remoteTime>localTime){applyingRemote=true;db=remote;db._sync=db._sync||{};db._sync.updatedAt=remoteTime;localStorage.setItem(KEY,JSON.stringify(db));applyingRemote=false;render(currentPage||'home');toast('Pobrano nowsze dane z chmury')}syncState='online';syncTitle='Zsynchronizowano';syncDetail='Wszystkie zmiany są aktualne.';updateSyncPill()}catch(e){window.wolfSyncError('Nie udało się odczytać danych z chmury.')}}
-
-migrate();
-function applyTheme(){document.documentElement.dataset.theme=localStorage.getItem('wolfEduTheme')||'light'}function toggleTheme(){localStorage.setItem('wolfEduTheme',localStorage.getItem('wolfEduTheme')==='dark'?'light':'dark');applyTheme();settings()}applyTheme();document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>render(b.dataset.page));render();if(hasSyncBridge())setTimeout(()=>{WolfSync.requestRemoteData();WolfSync.requestSchoolData();},450);setTimeout(()=>document.getElementById('splash')?.classList.add('hide'),700);
-</script></body></html>
+  <script src="js/app.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script src="js/school.js"></script>
+  <script src="js/grades.js"></script>
+  <script src="js/tasks.js"></script>
+  <script src="js/attendance.js"></script>
+  <script src="js/timetable.js"></script>
+  <script src="js/settings.js"></script>
+  <script src="js/sync.js"></script>
+  <script src="js/init.js"></script>
+</body>
+</html>

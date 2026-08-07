@@ -1,0 +1,14 @@
+:root{
+ --primary:#415f91;--on-primary:#fff;--primary-container:#d6e3ff;--on-primary-container:#001b3e;
+ --secondary:#565f71;--secondary-container:#dae2f9;--tertiary:#705575;--tertiary-container:#fad8fd;
+ --surface:#f9f9ff;--surface-container:#eef0f8;--surface-high:#e8eaf2;--card:#fff;
+ --text:#191c20;--muted:#44474e;--outline:#74777f;--line:#c5c6d0;--danger:#ba1a1a;--danger-container:#ffdad6;
+ --ok:#2e6b48;--shadow:#00000016;--radius:24px
+}
+html[data-theme='dark']{
+ --primary:#aac7ff;--on-primary:#0a305f;--primary-container:#284777;--on-primary-container:#d6e3ff;
+ --secondary:#bec6dc;--secondary-container:#3e4759;--tertiary:#ddbce0;--tertiary-container:#573e5c;
+ --surface:#111318;--surface-container:#1d2026;--surface-high:#272a30;--card:#1b1e24;
+ --text:#e2e2e9;--muted:#c4c6d0;--outline:#8e9099;--line:#44474f;--danger:#ffb4ab;--danger-container:#93000a;
+ --ok:#91d5a8;--shadow:#00000055
+}
