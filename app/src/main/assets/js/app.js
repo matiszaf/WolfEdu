@@ -6,4 +6,13 @@ function save(){db._sync=db._sync||{};db._sync.updatedAt=Date.now();localStorage
 function setHead(t,s){$('#headTitle').textContent=t;$('#headSub').textContent=s||db.school}
 function setup(){setHead('WolfEdu','Pierwsza konfiguracja');$('#nav').classList.add('hidden');app.innerHTML=`<section class="setup"><div class="card"><h2>Utwórz swoją szkołę</h2><p class="muted">Dane zostają wyłącznie na tym telefonie.</p><input id="school" placeholder="Nazwa szkoły, np. SP 35 w Gdyni"><button style="width:100%;margin-top:8px" onclick="createSchool()">Uruchom WolfEdu</button></div></section>`}
 function createSchool(){let v=$('#school').value.trim();if(!v)return toast('Wpisz nazwę szkoły');db.school=v;save();render('home')}
-function render(p=page){page=p;if(!db.school&&!wolfSchool.schoolName)return setup();$('#nav').classList.remove('hidden');document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===page));({home,classes,grades,tasks,attendance,plan,settings}[page]||home)()}
+function render(p=page){page=p;if(!db.school&&!wolfSchool.schoolName)return setup();$('#nav').classList.remove('hidden');document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===page));({home,classes,studentsPage,teachersPage,subjectsPage,schoolPage,grades,tasks,attendance,plan,settings}[page]||home)()}
+
+
+function canManageSchool(){
+  return ['owner','admin','director'].includes(String(wolfSchool?.role||'').toLowerCase());
+}
+function roleLabel(){
+  const r=String(wolfSchool?.role||'').toLowerCase();
+  return ({owner:'Właściciel',admin:'Administrator',director:'Dyrektor',teacher:'Nauczyciel',parent:'Rodzic',student:'Uczeń'})[r]||wolfSchool?.role||'Użytkownik';
+}

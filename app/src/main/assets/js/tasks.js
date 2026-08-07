@@ -6,15 +6,15 @@ function tasks(){
     return;
   }
   setHead('Zadania',wolfSchool.schoolName);
-  let classes=wolfSchool.classes||[],students=wolfSchool.students||[],subjects=wolfSchool.subjects||[],teachers=wolfSchool.teachers||[],list=wolfSchool.tasks||[];
-  app.innerHTML=`<div class="card"><h2>Dodaj zadanie</h2><input id="ctTitle" placeholder="Tytuł">
+  let classes=wolfSchool.classes||[],students=wolfSchool.students||[],subjects=wolfSchool.subjects||[],teachers=wolfSchool.teachers||[],list=wolfSchool.tasks||[],can=canManageSchool();
+  app.innerHTML=`${can?`<div class="card"><h2>Dodaj zadanie</h2><input id="ctTitle" placeholder="Tytuł">
   <select id="ctClass"><option value="">Klasa (opcjonalnie)</option>${classes.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('')}</select>
   <select id="ctStudent"><option value="">Uczeń (opcjonalnie)</option>${students.map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('')}</select>
   <select id="ctSubject"><option value="">Przedmiot</option>${subjects.map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('')}</select>
   <select id="ctTeacher"><option value="">Nauczyciel (opcjonalnie)</option>${teachers.map(t=>`<option value="${esc(t.id)}">${esc(t.name)}</option>`).join('')}</select>
   <select id="ctType"><option>Zadanie domowe</option><option>Sprawdzian</option><option>Kartkówka</option><option>Projekt</option></select>
   <input id="ctDue" type="date"><input id="ctNote" placeholder="Notatka">
-  <button style="width:100%" onclick="addCloudTask(this)">Dodaj zadanie</button></div>
+  <button style="width:100%" onclick="addCloudTask(this)">Dodaj zadanie</button></div>`:`<div class="card"><small>Dodawanie zadań wymaga roli administratora, dyrektora lub właściciela.</small></div>`}
   <div class="card"><h2>Zadania realtime</h2>${list.slice().reverse().map(t=>`<div class="item row between"><div><b>${esc(t.title||'Zadanie')}</b><br><small>${esc(subjects.find(s=>s.id===t.subjectId)?.name||'')} · ${esc(t.due||'')}</small></div><button class="secondary mini" onclick="WolfSync.setTaskDone('${t.id}',${!t.done})">${t.done?'Przywróć':'Gotowe'}</button></div>`).join('')||'<div class="empty">Brak zadań</div>'}</div>`;
 }
 function addCloudTask(btn){

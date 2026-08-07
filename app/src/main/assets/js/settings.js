@@ -16,11 +16,13 @@ function settings(){
   :`<div class="sync-state"><span class="bigdot"></span><div><b>Połącz urządzenia</b><br><small>Zaloguj się lub utwórz konto.</small></div></div><input id="syncEmail" type="email" autocomplete="email" placeholder="Adres e-mail"><input id="syncPassword" type="password" autocomplete="current-password" placeholder="Hasło (minimum 6 znaków)"><div class="sync-actions"><button onclick="loginSync(this)">Zaloguj</button><button class="secondary" onclick="registerSync(this)">Utwórz konto</button></div>`}
   </div></div>
 
+  ${syncLoggedIn?`<div class="card"><h2>Panel szkoły</h2><div class="row between"><div><b>${esc(wolfSchool.schoolName||'Brak aktywnej szkoły')}</b><br><small>${esc(roleLabel())}</small></div><button onclick="render('schoolPage')">Otwórz</button></div><div class="sync-note">Te same dane i funkcje administracyjne co w panelu WWW — dostosowane do telefonu.</div></div>`:''}
+
   <div class="card"><h2>Wygląd</h2><div class="switch"><div><b>Tryb ciemny</b><br><small>Przyciemnia interfejs aplikacji</small></div><button class="secondary" onclick="toggleTheme()">${dark?'Wyłącz':'Włącz'}</button></div></div>
 
   <div class="card"><h2>Kopia danych lokalnych</h2><small>Eksport zapisuje lokalną kopię awaryjną. Dane szkolne synchronizowane przez WolfCloud pozostają w Firestore.</small><button class="btn-full" style="margin-top:10px" onclick="exportData(this)">Eksportuj kopię JSON</button><label><input id="importFile" type="file" accept="application/json" style="margin-top:10px" onchange="importData(event)"></label></div>
 
-  <div class="version">WolfEdu 0.9.5-beta.2 · Material 3 + WolfCloud</div>`;
+  <div class="version">WolfEdu 0.9.7-beta.1 · Feature Parity</div>`;
 }
 function changeActiveSchool(id){if(hasSyncBridge()&&id){WolfSync.setActiveSchool(id);toast('Zmieniam aktywną szkołę…')}}
 function renameSchool(){let v=$('#sName')?.value?.trim();if(v){db.school=v;save();settings();toast('Zapisano')}}
