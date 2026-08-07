@@ -11,8 +11,46 @@ android {
         applicationId 'pl.wolfedu.app'
         minSdk 24
         targetSdk 35
-        versionCode 906001
-        versionName '0.9.6-beta.1'
+
+        def wolfVersionName =
+                System.getenv('WOLFEDU_VERSION_NAME') ?:
+                project.findProperty('WOLFEDU_VERSION_NAME') ?:
+                '0.9.6-beta.1'
+
+        def wolfVersionCode =
+                (System.getenv('WOLFEDU_VERSION_CODE') ?:
+                project.findProperty('WOLFEDU_VERSION_CODE') ?:
+                '906001') as Integer
+
+        versionCode wolfVersionCode
+        versionName wolfVersionName
+    }
+
+    signingConfigs {
+        release {
+            def keystorePath = System.getenv('KEYSTORE_FILE')
+            def keystorePassword = System.getenv('KEYSTORE_PASSWORD')
+            def keyAliasValue = System.getenv('KEY_ALIAS')
+            def keyPasswordValue = System.getenv('KEY_PASSWORD')
+
+            if (keystorePath &&
+                keystorePassword &&
+                keyAliasValue &&
+                keyPasswordValue) {
+
+                storeFile file(keystorePath)
+                storePassword keystorePassword
+                keyAlias keyAliasValue
+                keyPassword keyPasswordValue
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+            minifyEnabled false
+        }
     }
 }
 
