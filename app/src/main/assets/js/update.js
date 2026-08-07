@@ -36,7 +36,7 @@ function updateHomeBannerHtml(){
 
 let wolfUpdateTimeout=null;
 
-async async function checkWolfUpdate(userInitiated=false){
+async function checkWolfUpdate(userInitiated=false){
   if(wolfUpdate.checking)return;
 
   wolfUpdate.checking=true;
