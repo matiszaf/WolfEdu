@@ -162,5 +162,4 @@ window.wolfUpdateDownload=function(result){
 function initWolfUpdates(){
   if(!hasUpdateBridge())return;
   WolfUpdate.getCurrentVersion();
-  setTimeout(()=>checkWolfUpdate(false),1800);
 }
