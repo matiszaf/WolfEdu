@@ -62,8 +62,24 @@ function checkWolfUpdate(userInitiated=false){
 
   if(currentPage==='settings')settings();
 
-  WolfUpdate.getCurrentVersion();
-  WolfUpdate.checkForUpdates(!!userInitiated);
+  try{
+    WolfUpdate.getCurrentVersion();
+  }catch(e){
+    toast('DEBUG getCurrentVersion: '+String(e));
+  }
+
+  try{
+    WolfUpdate.checkForUpdates(!!userInitiated);
+    if(userInitiated)toast('DEBUG: wywołanie checkForUpdates wysłane');
+  }catch(e){
+    wolfUpdate.checking=false;
+    wolfUpdate.ok=false;
+    wolfUpdate.message='DEBUG checkForUpdates: '+String(e);
+
+    if(currentPage==='settings')settings();
+    toast(wolfUpdate.message);
+    return;
+  }
 
   if(userInitiated){
     wolfUpdateTimeout=setTimeout(()=>{
