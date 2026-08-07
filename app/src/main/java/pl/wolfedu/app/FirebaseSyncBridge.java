@@ -141,6 +141,177 @@ public final class FirebaseSyncBridge {
         startSchoolSync(user);
     }
 
+    private boolean hasActiveSchool() {
+        return activeSchoolId != null && !activeSchoolId.isBlank();
+    }
+
+    private Map<String, Object> auditPayload(FirebaseUser user) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("updatedBy", user.getUid());
+        payload.put("updatedAt", FieldValue.serverTimestamp());
+        return payload;
+    }
+
+    @JavascriptInterface
+    public void createCloudSchool(String name, String city, String type, String schoolYear) {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null || name == null || name.trim().isEmpty()) return;
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("name", name.trim());
+        payload.put("city", city == null ? "" : city.trim());
+        payload.put("type", type == null ? "" : type.trim());
+        payload.put("schoolYear", schoolYear == null ? "" : schoolYear.trim());
+        payload.put("ownerUid", user.getUid());
+        payload.put("createdAt", FieldValue.serverTimestamp());
+        payload.put("updatedAt", FieldValue.serverTimestamp());
+
+        firestore.collection("schools").add(payload)
+                .addOnSuccessListener(ref -> {
+                    Map<String, Object> member = new HashMap<>();
+                    member.put("uid", user.getUid());
+                    member.put("email", value(user.getEmail()));
+                    member.put("role", "owner");
+                    member.put("joinedAt", FieldValue.serverTimestamp());
+
+                    ref.collection("members").document(user.getUid()).set(member)
+                            .addOnSuccessListener(unused -> {
+                                Map<String, Object> profile = new HashMap<>();
+                                profile.put("activeSchoolId", ref.getId());
+                                firestore.collection("users").document(user.getUid())
+                                        .set(profile, SetOptions.merge())
+                                        .addOnSuccessListener(done -> {
+                                            loadAvailableSchools(user);
+                                            emitStatus("Gotowe", "Szkoła została utworzona.", "online");
+                                        })
+                                        .addOnFailureListener(error -> emitSchoolError(friendly(error.getMessage())));
+                            })
+                            .addOnFailureListener(error -> emitSchoolError(friendly(error.getMessage())));
+                })
+                .addOnFailureListener(error -> emitSchoolError(friendly(error.getMessage())));
+    }
+
+    @JavascriptInterface
+    public void addCloudClass(String name, String profile) {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null || !hasActiveSchool() || name == null || name.trim().isEmpty()) return;
+        Map<String, Object> payload = auditPayload(user);
+        payload.put("name", name.trim());
+        payload.put("profile", profile == null ? "" : profile.trim());
+        payload.put("createdAt", FieldValue.serverTimestamp());
+        payload.put("createdBy", user.getUid());
+        firestore.collection("schools").document(activeSchoolId).collection("classes").add(payload)
+                .addOnFailureListener(error -> emitSchoolError(friendly(error.getMessage())));
+    }
+
+    @JavascriptInterface
+    public void deleteCloudClass(String id) {
+        if (!hasActiveSchool() || id == null || id.isBlank()) return;
+        firestore.collection("schools").document(activeSchoolId).collection("classes").document(id).delete()
+                .addOnFailureListener(error -> emitSchoolError(friendly(error.getMessage())));
+    }
+
+    @JavascriptInterface
+    public void addCloudStudent(String name, String classId, String number, String email) {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null || !hasActiveSchool() || name == null || name.trim().isEmpty()) return;
+        Map<String, Object> payload = auditPayload(user);
+        payload.put("name", name.trim());
+        payload.put("classId", classId == null ? "" : classId);
+        payload.put("number", number == null ? "" : number.trim());
+        payload.put("email", email == null ? "" : email.trim());
+        payload.put("createdAt", FieldValue.serverTimestamp());
+        payload.put("createdBy", user.getUid());
+        firestore.collection("schools").document(activeSchoolId).collection("students").add(payload)
+                .addOnFailureListener(error -> emitSchoolError(friendly(error.getMessage())));
+    }
+
+    @JavascriptInterface
+    public void deleteCloudStudent(String id) {
+        if (!hasActiveSchool() || id == null || id.isBlank()) return;
+        firestore.collection("schools").document(activeSchoolId).collection("students").document(id).delete()
+                .addOnFailureListener(error -> emitSchoolError(friendly(error.getMessage())));
+    }
+
+    @JavascriptInterface
+    public void addCloudTeacher(String name, String email, String title) {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null || !hasActiveSchool() || name == null || name.trim().isEmpty()) return;
+        Map<String, Object> payload = auditPayload(user);
+        payload.put("name", name.trim());
+        payload.put("email", email == null ? "" : email.trim());
+        payload.put("title", title == null ? "" : title.trim());
+        payload.put("createdAt", FieldValue.serverTimestamp());
+        payload.put("createdBy", user.getUid());
+        firestore.collection("schools").document(activeSchoolId).collection("teachers").add(payload)
+                .addOnFailureListener(error -> emitSchoolError(friendly(error.getMessage())));
+    }
+
+    @JavascriptInterface
+    public void deleteCloudTeacher(String id) {
+        if (!hasActiveSchool() || id == null || id.isBlank()) return;
+        firestore.collection("schools").document(activeSchoolId).collection("teachers").document(id).delete()
+                .addOnFailureListener(error -> emitSchoolError(friendly(error.getMessage())));
+    }
+
+    @JavascriptInterface
+    public void addCloudSubject(String name, String shortName) {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null || !hasActiveSchool() || name == null || name.trim().isEmpty()) return;
+        Map<String, Object> payload = auditPayload(user);
+        payload.put("name", name.trim());
+        payload.put("short", shortName == null ? "" : shortName.trim().toUpperCase());
+        payload.put("createdAt", FieldValue.serverTimestamp());
+        payload.put("createdBy", user.getUid());
+        firestore.collection("schools").document(activeSchoolId).collection("subjects").add(payload)
+                .addOnFailureListener(error -> emitSchoolError(friendly(error.getMessage())));
+    }
+
+    @JavascriptInterface
+    public void deleteCloudSubject(String id) {
+        if (!hasActiveSchool() || id == null || id.isBlank()) return;
+        firestore.collection("schools").document(activeSchoolId).collection("subjects").document(id).delete()
+                .addOnFailureListener(error -> emitSchoolError(friendly(error.getMessage())));
+    }
+
+    @JavascriptInterface
+    public void saveCloudLesson(String id, String classId, int day, int lesson, String subjectId,
+                                String teacherId, String room, String start, String end) {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null || !hasActiveSchool() || classId == null || classId.isBlank()
+                || subjectId == null || subjectId.isBlank()) return;
+
+        Map<String, Object> payload = auditPayload(user);
+        payload.put("classId", classId);
+        payload.put("day", day);
+        payload.put("lesson", lesson);
+        payload.put("subjectId", subjectId);
+        payload.put("teacherId", teacherId == null ? "" : teacherId);
+        payload.put("room", room == null ? "" : room.trim());
+        payload.put("start", start == null ? "" : start);
+        payload.put("end", end == null ? "" : end);
+
+        if (id == null || id.isBlank()) {
+            payload.put("createdAt", FieldValue.serverTimestamp());
+            payload.put("createdBy", user.getUid());
+            payload.put("version", 1);
+            firestore.collection("schools").document(activeSchoolId).collection("timetable").add(payload)
+                    .addOnFailureListener(error -> emitSchoolError(friendly(error.getMessage())));
+        } else {
+            payload.put("version", FieldValue.increment(1));
+            firestore.collection("schools").document(activeSchoolId).collection("timetable").document(id)
+                    .set(payload, SetOptions.merge())
+                    .addOnFailureListener(error -> emitSchoolError(friendly(error.getMessage())));
+        }
+    }
+
+    @JavascriptInterface
+    public void deleteCloudLesson(String id) {
+        if (!hasActiveSchool() || id == null || id.isBlank()) return;
+        firestore.collection("schools").document(activeSchoolId).collection("timetable").document(id).delete()
+                .addOnFailureListener(error -> emitSchoolError(friendly(error.getMessage())));
+    }
+
     @JavascriptInterface
     public void addGrade(String studentId, String subjectId, String teacherId, double value, int weight,
                          String category, String comment, String date) {
