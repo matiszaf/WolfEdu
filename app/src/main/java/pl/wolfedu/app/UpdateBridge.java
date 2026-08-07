@@ -57,8 +57,8 @@ public final class UpdateBridge {
     public void getCurrentVersion() {
         JSONObject payload = new JSONObject();
         try {
-            payload.put("versionName", BuildConfig.VERSION_NAME);
-            payload.put("versionCode", BuildConfig.VERSION_CODE);
+            payload.put("versionName", currentVersionName());
+            payload.put("versionCode", currentVersionCode());
         } catch (Exception ignored) {}
         call("window.wolfUpdateCurrent && window.wolfUpdateCurrent(" + payload + ")");
     }
@@ -74,7 +74,7 @@ public final class UpdateBridge {
                 connection.setReadTimeout(9000);
                 connection.setUseCaches(false);
                 connection.setRequestProperty("Accept", "application/json");
-                connection.setRequestProperty("User-Agent", "WolfEdu/" + BuildConfig.VERSION_NAME);
+                connection.setRequestProperty("User-Agent", "WolfEdu/" + currentVersionName());
 
                 int code = connection.getResponseCode();
                 if (code < 200 || code >= 300) {
@@ -94,13 +94,13 @@ public final class UpdateBridge {
                 String apkUrl = remote.optString("apkUrl", "");
                 String changelog = remote.optString("changelog", "");
                 boolean mandatory = remote.optBoolean("mandatory", false);
-                boolean available = remoteCode > BuildConfig.VERSION_CODE && !apkUrl.isBlank();
+                boolean available = remoteCode > currentVersionCode() && !apkUrl.isBlank();
 
                 JSONObject result = new JSONObject();
                 result.put("ok", true);
                 result.put("available", available);
-                result.put("currentVersionName", BuildConfig.VERSION_NAME);
-                result.put("currentVersionCode", BuildConfig.VERSION_CODE);
+                result.put("currentVersionName", currentVersionName());
+                result.put("currentVersionCode", currentVersionCode());
                 result.put("versionName", remoteName);
                 result.put("versionCode", remoteCode);
                 result.put("apkUrl", apkUrl);
@@ -271,4 +271,35 @@ public final class UpdateBridge {
     private void call(String code) {
         webView.post(() -> webView.evaluateJavascript(code, null));
     }
+
+    private String currentVersionName() {
+        try {
+            android.content.pm.PackageInfo info =
+                    activity.getPackageManager().getPackageInfo(
+                            activity.getPackageName(), 0
+                    );
+
+            return info.versionName == null ? "unknown" : info.versionName;
+        } catch (Exception e) {
+            return "unknown";
+        }
+    }
+
+    private long currentVersionCode() {
+        try {
+            android.content.pm.PackageInfo info =
+                    activity.getPackageManager().getPackageInfo(
+                            activity.getPackageName(), 0
+                    );
+
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                return info.getLongVersionCode();
+            }
+
+            return info.versionCode;
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
 }
