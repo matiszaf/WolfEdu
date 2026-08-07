@@ -34,15 +34,40 @@ function updateHomeBannerHtml(){
   return `<div class="card" onclick="render('settings')" style="cursor:pointer"><div class="row between"><div><b>Dostępna aktualizacja ${esc(wolfUpdate.versionName)}</b><br><small>${wolfUpdate.mandatory?'Ta aktualizacja jest oznaczona jako wymagana.':'Dotknij, aby przejść do aktualizacji.'}</small></div><span class="badge">UPDATE</span></div></div>`;
 }
 
+let wolfUpdateTimeout=null;
+
 function checkWolfUpdate(userInitiated=false){
   if(!hasUpdateBridge()){
     if(userInitiated)toast('Aktualizacje są dostępne w aplikacji Android');
     return;
   }
-  wolfUpdate.checking=true;wolfUpdate.message='';
+
+  if(wolfUpdateTimeout){
+    clearTimeout(wolfUpdateTimeout);
+    wolfUpdateTimeout=null;
+  }
+
+  wolfUpdate.checking=true;
+  wolfUpdate.message='';
+
   if(currentPage==='settings')settings();
+
   WolfUpdate.getCurrentVersion();
   WolfUpdate.checkForUpdates(!!userInitiated);
+
+  wolfUpdateTimeout=setTimeout(()=>{
+    if(!wolfUpdate.checking)return;
+
+    wolfUpdate.checking=false;
+    wolfUpdate.ok=false;
+    wolfUpdate.message='Przekroczono czas sprawdzania aktualizacji. Spróbuj ponownie.';
+
+    if(currentPage==='settings')settings();
+
+    if(userInitiated){
+      toast(wolfUpdate.message);
+    }
+  },15000);
 }
 
 function installWolfUpdate(){
@@ -60,6 +85,11 @@ window.wolfUpdateCurrent=function(info){
 };
 
 window.wolfUpdateResult=function(result){
+  if(wolfUpdateTimeout){
+    clearTimeout(wolfUpdateTimeout);
+    wolfUpdateTimeout=null;
+  }
+
   result=result||{};
   wolfUpdate.checking=false;
   wolfUpdate.ok=!!result.ok;
