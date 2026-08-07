@@ -73,6 +73,8 @@ function home(){
       </span>
     </section>
 
+    ${typeof updateHomeBannerHtml==='function'?updateHomeBannerHtml():''}
+
     <section class="dashboard-hero">
       <div class="eyebrow">${esc(schoolName)}</div>
       <h2>Najbliższa lekcja</h2>
