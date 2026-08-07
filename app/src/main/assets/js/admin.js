@@ -23,13 +23,14 @@ function schoolPage(){
       </div>
       ${schools.length?`<select onchange="changeActiveSchool(this.value)">${schools.map(s=>`<option value="${esc(s.id)}" ${s.id===wolfSchool.activeSchoolId?'selected':''}>${esc(s.name||'Szkoła')}</option>`).join('')}</select>`:''}
     </div>
-    ${can?`<div class="card"><h2>Utwórz szkołę</h2>
+    <div class="card"><h2>Utwórz szkołę</h2>
       <input id="csName" placeholder="Nazwa szkoły">
       <input id="csCity" placeholder="Miejscowość">
       <select id="csType"><option>Szkoła podstawowa</option><option>Liceum</option><option>Technikum</option><option>Szkoła branżowa</option><option>Inna</option></select>
       <input id="csYear" placeholder="Rok szkolny, np. 2026/2027">
       <button style="width:100%" onclick="createCloudSchoolMobile(this)">Utwórz szkołę</button>
-    </div>`:`<div class="card"><small>Tworzenie i administracja szkołą wymagają roli administratora, dyrektora lub właściciela.</small></div>`}
+      <div class="sync-note">Tak samo jak w panelu WWW: każde zalogowane konto może utworzyć własną szkołę i automatycznie zostaje jej właścicielem.</div>
+    </div>
     <div class="card"><h2>Zarządzanie</h2>
       <div class="action-grid">
         <button class="action-card" onclick="render('classes')"><span class="action-icon">▦</span><b>Klasy</b><small>${(wolfSchool.classes||[]).length}</small></button>

@@ -4,7 +4,7 @@ function settings(){
   let schoolOptions=(wolfSchool.schools||[]).map(s=>`<option value="${esc(s.id)}" ${s.id===wolfSchool.activeSchoolId?'selected':''}>${esc(s.name||'Szkoła')}</option>`).join('');
 
   app.innerHTML=`<div class="card"><h2>Profil WolfEdu</h2>
-  ${syncLoggedIn?`<div class="row"><div class="avatar">${esc((syncEmail||'?')[0].toUpperCase())}</div><div><b>${esc(syncEmail)}</b><br><small>Rola: ${esc(wolfSchool.role||'brak')} · ${esc(wolfSchool.schoolName||'brak aktywnej szkoły')}</small></div></div>
+  ${syncLoggedIn?`<div class="row"><div class="avatar">${esc((syncEmail||'?')[0].toUpperCase())}</div><div><b>${esc(syncEmail)}</b><br><small>Rola: ${esc(wolfSchool.role||'brak')} · ${esc(wolfSchool.schoolName||'brak aktywnej szkoły')}</small><br><small>UID: ${esc(syncUid||'—')}</small></div></div>
   ${schoolOptions?`<select id="activeSchoolSelect" onchange="changeActiveSchool(this.value)">${schoolOptions}</select>`:'<div class="warn" style="margin-top:10px">Nie znaleziono szkół przypisanych do tego konta.</div>'}`
   :'<div class="muted">Zaloguj się do WolfCloud, aby pobrać profil i szkołę.</div>'}</div>
 
@@ -20,11 +20,13 @@ function settings(){
 
   ${syncLoggedIn?`<div class="card"><h2>Panel szkoły</h2><div class="row between"><div><b>${esc(wolfSchool.schoolName||'Brak aktywnej szkoły')}</b><br><small>${esc(roleLabel())}</small></div><button onclick="render('schoolPage')">Otwórz</button></div><div class="sync-note">Te same dane i funkcje administracyjne co w panelu WWW — dostosowane do telefonu.</div></div>`:''}
 
+  ${syncLoggedIn?`<div class="card"><h2>Architektura</h2><small>Baza Firestore: <code>default</code></small><br><small>Aktywna szkoła: <code>${esc(wolfSchool.activeSchoolId||'brak')}</code></small></div>`:''}
+
   <div class="card"><h2>Wygląd</h2><div class="switch"><div><b>Tryb ciemny</b><br><small>Przyciemnia interfejs aplikacji</small></div><button class="secondary" onclick="toggleTheme()">${dark?'Wyłącz':'Włącz'}</button></div></div>
 
   <div class="card"><h2>Kopia danych lokalnych</h2><small>Eksport zapisuje lokalną kopię awaryjną. Dane szkolne synchronizowane przez WolfCloud pozostają w Firestore.</small><button class="btn-full" style="margin-top:10px" onclick="exportData(this)">Eksportuj kopię JSON</button><label><input id="importFile" type="file" accept="application/json" style="margin-top:10px" onchange="importData(event)"></label></div>
 
-  <div class="version">WolfEdu 0.9.8-beta.1 · Użytkownicy i role</div>`;
+  <div class="version">WolfEdu 0.9.9-beta.1 · Feature Parity Baseline</div>`;
 }
 function changeActiveSchool(id){if(hasSyncBridge()&&id){WolfSync.setActiveSchool(id);toast('Zmieniam aktywną szkołę…')}}
 function renameSchool(){let v=$('#sName')?.value?.trim();if(v){db.school=v;save();settings();toast('Zapisano')}}
