@@ -263,9 +263,16 @@ public final class UpdateBridge {
     }
 
     private String friendly(Exception e) {
-        String message = e == null ? null : e.getMessage();
-        if (message == null || message.isBlank()) return "Nie udało się połączyć z serwerem aktualizacji.";
-        return message;
+        if (e == null) return "Nieznany błąd aktualizacji.";
+
+        String type = e.getClass().getSimpleName();
+        String message = e.getMessage();
+
+        if (message == null || message.isBlank()) {
+            return type + ": brak szczegółowego komunikatu";
+        }
+
+        return type + ": " + message;
     }
 
     private void call(String code) {

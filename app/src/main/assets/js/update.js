@@ -47,7 +47,9 @@ function checkWolfUpdate(userInitiated=false){
     wolfUpdateTimeout=null;
   }
 
-  wolfUpdate.checking=true;
+  // Tylko ręczne sprawdzanie blokuje przycisk. Automatyczne sprawdzanie
+  // przy starcie działa w tle i nie unieruchamia interfejsu.
+  wolfUpdate.checking=!!userInitiated;
   wolfUpdate.message='';
 
   if(currentPage==='settings')settings();
@@ -55,19 +57,18 @@ function checkWolfUpdate(userInitiated=false){
   WolfUpdate.getCurrentVersion();
   WolfUpdate.checkForUpdates(!!userInitiated);
 
-  wolfUpdateTimeout=setTimeout(()=>{
-    if(!wolfUpdate.checking)return;
+  if(userInitiated){
+    wolfUpdateTimeout=setTimeout(()=>{
+      if(!wolfUpdate.checking)return;
 
-    wolfUpdate.checking=false;
-    wolfUpdate.ok=false;
-    wolfUpdate.message='Przekroczono czas sprawdzania aktualizacji. Spróbuj ponownie.';
+      wolfUpdate.checking=false;
+      wolfUpdate.ok=false;
+      wolfUpdate.message='Przekroczono czas sprawdzania aktualizacji (15 s). Spróbuj ponownie.';
 
-    if(currentPage==='settings')settings();
-
-    if(userInitiated){
+      if(currentPage==='settings')settings();
       toast(wolfUpdate.message);
-    }
-  },15000);
+    },15000);
+  }
 }
 
 function installWolfUpdate(){
