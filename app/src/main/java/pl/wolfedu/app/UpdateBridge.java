@@ -23,6 +23,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public final class UpdateBridge {
     private static final String UPDATE_MANIFEST_URL =
@@ -32,6 +33,7 @@ public final class UpdateBridge {
     private final WebView webView;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final DownloadManager downloadManager;
+    private final AtomicBoolean checking = new AtomicBoolean(false);
 
     private long pendingDownloadId = -1L;
     private boolean receiverRegistered = false;
@@ -65,15 +67,21 @@ public final class UpdateBridge {
 
     @JavascriptInterface
     public void checkForUpdates(boolean userInitiated) {
+        if (!checking.compareAndSet(false, true)) {
+            return;
+        }
+
         executor.execute(() -> {
             HttpURLConnection connection = null;
             try {
                 URL url = new URL(UPDATE_MANIFEST_URL + "?t=" + System.currentTimeMillis());
                 connection = (HttpURLConnection) url.openConnection();
-                connection.setConnectTimeout(9000);
-                connection.setReadTimeout(9000);
+                connection.setConnectTimeout(8000);
+                connection.setReadTimeout(8000);
                 connection.setUseCaches(false);
+                connection.setInstanceFollowRedirects(true);
                 connection.setRequestProperty("Accept", "application/json");
+                connection.setRequestProperty("Cache-Control", "no-cache");
                 connection.setRequestProperty("User-Agent", "WolfEdu/" + currentVersionName());
 
                 int code = connection.getResponseCode();
@@ -94,11 +102,17 @@ public final class UpdateBridge {
                 String apkUrl = remote.optString("apkUrl", "");
                 String changelog = remote.optString("changelog", "");
                 boolean mandatory = remote.optBoolean("mandatory", false);
-                boolean available = remoteCode > currentVersionCode() && !apkUrl.isBlank();
+
+                if (remoteCode <= 0L || remoteName.isBlank()) {
+                    throw new IllegalStateException("Manifest aktualizacji nie zawiera poprawnej wersji.");
+                }
+                if (!apkUrl.isBlank() && !apkUrl.startsWith("https://")) {
+                    throw new IllegalStateException("Manifest zawiera nieprawidłowy adres APK.");
+                }
 
                 JSONObject result = new JSONObject();
                 result.put("ok", true);
-                result.put("available", available);
+                result.put("available", remoteCode > currentVersionCode() && !apkUrl.isBlank());
                 result.put("currentVersionName", currentVersionName());
                 result.put("currentVersionCode", currentVersionCode());
                 result.put("versionName", remoteName);
@@ -118,6 +132,7 @@ public final class UpdateBridge {
                 } catch (Exception ignored) {}
                 call("window.wolfUpdateResult && window.wolfUpdateResult(" + result + ")");
             } finally {
+                checking.set(false);
                 if (connection != null) connection.disconnect();
             }
         });
@@ -130,6 +145,11 @@ public final class UpdateBridge {
                 if (apkUrl == null || apkUrl.isBlank() || !apkUrl.startsWith("https://")) {
                     emitDownload("error", "Nieprawidłowy adres APK.");
                     return;
+                }
+
+                if (pendingDownloadId > 0) {
+                    try { downloadManager.remove(pendingDownloadId); } catch (Exception ignored) {}
+                    pendingDownloadId = -1L;
                 }
 
                 DownloadManager.Request request = new DownloadManager.Request(Uri.parse(apkUrl));
@@ -264,15 +284,11 @@ public final class UpdateBridge {
 
     private String friendly(Exception e) {
         if (e == null) return "Nieznany błąd aktualizacji.";
-
         String type = e.getClass().getSimpleName();
         String message = e.getMessage();
-
-        if (message == null || message.isBlank()) {
-            return type + ": brak szczegółowego komunikatu";
-        }
-
-        return type + ": " + message;
+        return (message == null || message.isBlank())
+                ? type + ": brak szczegółowego komunikatu"
+                : type + ": " + message;
     }
 
     private void call(String code) {
@@ -282,10 +298,7 @@ public final class UpdateBridge {
     private String currentVersionName() {
         try {
             android.content.pm.PackageInfo info =
-                    activity.getPackageManager().getPackageInfo(
-                            activity.getPackageName(), 0
-                    );
-
+                    activity.getPackageManager().getPackageInfo(activity.getPackageName(), 0);
             return info.versionName == null ? "unknown" : info.versionName;
         } catch (Exception e) {
             return "unknown";
@@ -295,18 +308,11 @@ public final class UpdateBridge {
     private long currentVersionCode() {
         try {
             android.content.pm.PackageInfo info =
-                    activity.getPackageManager().getPackageInfo(
-                            activity.getPackageName(), 0
-                    );
-
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
-                return info.getLongVersionCode();
-            }
-
+                    activity.getPackageManager().getPackageInfo(activity.getPackageName(), 0);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) return info.getLongVersionCode();
             return info.versionCode;
         } catch (Exception e) {
-            return 0;
+            return 0L;
         }
     }
-
 }

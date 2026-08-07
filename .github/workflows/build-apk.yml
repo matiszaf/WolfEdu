@@ -45,7 +45,7 @@ jobs:
             VERSION_NAME="$BASE_VERSION"
           fi
 
-          VERSION_CODE=$((906000 + GITHUB_RUN_NUMBER))
+          VERSION_CODE=$(date -u +%s)
 
           echo "WOLFEDU_VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
           echo "WOLFEDU_VERSION_CODE=$VERSION_CODE" >> "$GITHUB_ENV"
