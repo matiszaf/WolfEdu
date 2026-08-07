@@ -1,4 +1,4 @@
-package pl.xwolfik.mojdziennik;
+package pl.wolfedu.app;
 
 import android.app.Activity;
 import android.os.Bundle;
