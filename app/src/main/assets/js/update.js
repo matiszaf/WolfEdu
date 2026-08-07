@@ -36,65 +36,79 @@ function updateHomeBannerHtml(){
 
 let wolfUpdateTimeout=null;
 
-function checkWolfUpdate(userInitiated=false){
-  if(userInitiated){
-    toast(
-      typeof WolfUpdate==='undefined'
-        ? 'DEBUG: WolfUpdate = undefined'
-        : 'DEBUG: WolfUpdate dostępny'
-    );
-  }
+async async function checkWolfUpdate(userInitiated=false){
+  if(wolfUpdate.checking)return;
 
-  if(!hasUpdateBridge()){
-    if(userInitiated)toast('Aktualizacje są dostępne w aplikacji Android');
-    return;
-  }
-
-  if(wolfUpdateTimeout){
-    clearTimeout(wolfUpdateTimeout);
-    wolfUpdateTimeout=null;
-  }
-
-  // Tylko ręczne sprawdzanie blokuje przycisk. Automatyczne sprawdzanie
-  // przy starcie działa w tle i nie unieruchamia interfejsu.
-  wolfUpdate.checking=!!userInitiated;
+  wolfUpdate.checking=true;
+  wolfUpdate.ok=true;
   wolfUpdate.message='';
 
   if(currentPage==='settings')settings();
 
   try{
-    WolfUpdate.getCurrentVersion();
-  }catch(e){
-    toast('DEBUG getCurrentVersion: '+String(e));
-  }
+    if(typeof WolfUpdate!=='undefined' && WolfUpdate && WolfUpdate.getCurrentVersion){
+      WolfUpdate.getCurrentVersion();
+    }
 
-  try{
-    WolfUpdate.checkForUpdates(!!userInitiated);
-    if(userInitiated)toast('DEBUG: wywołanie checkForUpdates wysłane');
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),15000);
+
+    const response=await fetch(
+      'https://raw.githubusercontent.com/matiszaf/WolfEdu-Releases/main/version.json?t='+Date.now(),
+      {
+        method:'GET',
+        cache:'no-store',
+        signal:controller.signal
+      }
+    );
+
+    clearTimeout(timer);
+
+    if(!response.ok){
+      throw new Error('HTTP '+response.status);
+    }
+
+    const result=await response.json();
+
+    wolfUpdate.versionName=result.versionName||'';
+    wolfUpdate.versionCode=Number(result.versionCode||0);
+    wolfUpdate.apkUrl=result.apkUrl||'';
+    wolfUpdate.changelog=result.changelog||'';
+    wolfUpdate.mandatory=!!result.mandatory;
+
+    wolfUpdate.available=
+      wolfUpdate.versionCode > Number(wolfUpdate.currentVersionCode||0)
+      && !!wolfUpdate.apkUrl;
+
+    wolfUpdate.ok=true;
+    wolfUpdate.checking=false;
+
+    if(userInitiated){
+      toast(
+        wolfUpdate.available
+          ? 'Dostępna aktualizacja '+wolfUpdate.versionName
+          : 'WolfEdu jest aktualne'
+      );
+    }else if(wolfUpdate.available){
+      toast('Dostępna aktualizacja WolfEdu '+wolfUpdate.versionName);
+    }
+
   }catch(e){
     wolfUpdate.checking=false;
     wolfUpdate.ok=false;
-    wolfUpdate.message='DEBUG checkForUpdates: '+String(e);
 
-    if(currentPage==='settings')settings();
-    toast(wolfUpdate.message);
-    return;
+    if(e && e.name==='AbortError'){
+      wolfUpdate.message='Przekroczono czas połączenia z serwerem aktualizacji.';
+    }else{
+      wolfUpdate.message='Błąd aktualizacji: '+String(e);
+    }
+
+    if(userInitiated)toast(wolfUpdate.message);
   }
 
-  if(userInitiated){
-    wolfUpdateTimeout=setTimeout(()=>{
-      if(!wolfUpdate.checking)return;
-
-      wolfUpdate.checking=false;
-      wolfUpdate.ok=false;
-      wolfUpdate.message='Przekroczono czas sprawdzania aktualizacji (15 s). Spróbuj ponownie.';
-
-      if(currentPage==='settings')settings();
-      toast(wolfUpdate.message);
-    },15000);
-  }
+  if(currentPage==='settings')settings();
+  if(currentPage==='home'&&typeof home==='function')home();
 }
-
 function installWolfUpdate(){
   if(!hasUpdateBridge()||!wolfUpdate.available||!wolfUpdate.apkUrl)return;
   wolfUpdate.downloadState='starting';wolfUpdate.message='Przygotowuję pobieranie…';
