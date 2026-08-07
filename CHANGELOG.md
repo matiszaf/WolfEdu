@@ -1,5 +1,11 @@
 # Changelog
 
+## 4.0.2
+- Naprawiono połączenie z nazwanym Firestore `default` zamiast domyślnej bazy `(default)`.
+- Ulepszono obsługę trybu offline WolfSync.
+- Chwilowy brak sieci nie jest już pokazywany jako krytyczny błąd synchronizacji.
+
+
 ## 4.0.1
 - Włączono AndroidX wymagany przez Firebase Authentication i Firestore.
 - Włączono Jetifier dla zgodności zależności.

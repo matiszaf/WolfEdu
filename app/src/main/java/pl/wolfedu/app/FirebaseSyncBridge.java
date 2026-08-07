@@ -24,7 +24,7 @@ public final class FirebaseSyncBridge {
     public FirebaseSyncBridge(WebView webView) {
         this.webView = webView;
         this.auth = FirebaseAuth.getInstance();
-        this.firestore = FirebaseFirestore.getInstance();
+        this.firestore = FirebaseFirestore.getInstance("default");
         auth.addAuthStateListener(ignored -> emitAuthState());
     }
 
@@ -92,7 +92,7 @@ public final class FirebaseSyncBridge {
                         emitStatus("Gotowe", "To konto nie ma jeszcze kopii w chmurze.", "online");
                     }
                 })
-                .addOnFailureListener(error -> emitError(friendly(error.getMessage())));
+                .addOnFailureListener(error -> emitStatus("Tryb offline", friendly(error.getMessage()), "pending"));
     }
 
     private DocumentReference document(FirebaseUser user) {
@@ -155,7 +155,7 @@ public final class FirebaseSyncBridge {
         if (text.contains("email address is already in use")) return "Konto z tym adresem już istnieje.";
         if (text.contains("badly formatted")) return "Wpisz poprawny adres e-mail.";
         if (text.contains("at least 6 characters")) return "Hasło musi mieć co najmniej 6 znaków.";
-        if (text.contains("network error")) return "Brak połączenia. Zmiany zostaną wysłane później.";
+        if (text.contains("network error") || text.contains("client is offline") || text.contains("UNAVAILABLE")) return "Brak połączenia z WolfCloud. Dane lokalne są bezpieczne; synchronizacja wznowi się automatycznie.";
         return text;
     }
 }
