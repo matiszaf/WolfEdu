@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       version_name:
-        description: "Wersja, np. 0.10.1"
+        description: "Wersja, np. 0.10.4"
         required: true
-        default: "0.10.3"
+        default: "0.10.4"
 
       changelog:
         description: "Krótki opis zmian"
@@ -75,7 +75,7 @@ jobs:
           VERSION_NAME: ${{ inputs.version_name }}
         shell: bash
         run: |
-          VERSION_CODE=$((1000000 + GITHUB_RUN_NUMBER))
+          VERSION_CODE=$(date -u +%s)
 
           echo "WOLFEDU_VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
           echo "WOLFEDU_VERSION_CODE=$VERSION_CODE" >> "$GITHUB_ENV"

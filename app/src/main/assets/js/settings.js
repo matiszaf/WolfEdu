@@ -22,13 +22,14 @@ function settings(){
 
   ${syncLoggedIn?`<div class="card"><h2>Architektura</h2><small>Baza Firestore: <code>default</code></small><br><small>Aktywna szkoła: <code>${esc(wolfSchool.activeSchoolId||'brak')}</code></small></div>`:''}
 
-  ${typeof updateCardHtml==='function'?updateCardHtml():''}
+  <div id="updateCardMount"></div>
 
   <div class="card"><h2>Wygląd</h2><div class="switch"><div><b>Tryb ciemny</b><br><small>Przyciemnia interfejs aplikacji</small></div><button class="secondary" onclick="toggleTheme()">${dark?'Wyłącz':'Włącz'}</button></div></div>
 
   <div class="card"><h2>Kopia danych lokalnych</h2><small>Eksport zapisuje lokalną kopię awaryjną. Dane szkolne synchronizowane przez WolfCloud pozostają w Firestore.</small><button class="btn-full" style="margin-top:10px" onclick="exportData(this)">Eksportuj kopię JSON</button><label><input id="importFile" type="file" accept="application/json" style="margin-top:10px" onchange="importData(event)"></label></div>
 
-  <div class="version">WolfEdu 0.10.0 · Aktualizacje OTA</div>`;
+  <div class="version">WolfEdu 0.10.4 · Aktualizacje OTA</div>`;
+  if(typeof mountUpdateCard==='function')mountUpdateCard();
 }
 function changeActiveSchool(id){if(hasSyncBridge()&&id){WolfSync.setActiveSchool(id);toast('Zmieniam aktywną szkołę…')}}
 function renameSchool(){let v=$('#sName')?.value?.trim();if(v){db.school=v;save();settings();toast('Zapisano')}}

@@ -12,15 +12,21 @@ android {
         minSdk 24
         targetSdk 35
 
+        def versionProps = new Properties()
+        def versionPropsFile = rootProject.file('version.properties')
+        if (versionPropsFile.exists()) {
+            versionPropsFile.withInputStream { versionProps.load(it) }
+        }
+
         def wolfVersionName =
                 System.getenv('WOLFEDU_VERSION_NAME') ?:
                 project.findProperty('WOLFEDU_VERSION_NAME') ?:
-                '0.9.6-beta.1'
+                versionProps.getProperty('VERSION_NAME', '0.10.4')
 
         def wolfVersionCode =
                 (System.getenv('WOLFEDU_VERSION_CODE') ?:
                 project.findProperty('WOLFEDU_VERSION_CODE') ?:
-                '906001') as Integer
+                versionProps.getProperty('VERSION_CODE', '1000004')) as Integer
 
         versionCode wolfVersionCode
         versionName wolfVersionName
