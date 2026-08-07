@@ -37,6 +37,14 @@ function updateHomeBannerHtml(){
 let wolfUpdateTimeout=null;
 
 function checkWolfUpdate(userInitiated=false){
+  if(userInitiated){
+    toast(
+      typeof WolfUpdate==='undefined'
+        ? 'DEBUG: WolfUpdate = undefined'
+        : 'DEBUG: WolfUpdate dostępny'
+    );
+  }
+
   if(!hasUpdateBridge()){
     if(userInitiated)toast('Aktualizacje są dostępne w aplikacji Android');
     return;
