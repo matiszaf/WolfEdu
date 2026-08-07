@@ -11,8 +11,10 @@ android {
         applicationId 'pl.wolfedu.app'
         minSdk 24
         targetSdk 35
-        versionCode 10
-        versionName '4.1.0'
+        def wolfVersionName = System.getenv('WOLFEDU_VERSION_NAME') ?: project.findProperty('WOLFEDU_VERSION_NAME') ?: '0.9.0-beta.1'
+        def wolfVersionCode = (System.getenv('WOLFEDU_VERSION_CODE') ?: project.findProperty('WOLFEDU_VERSION_CODE') ?: '900001') as Integer
+        versionCode wolfVersionCode
+        versionName wolfVersionName
     }
 
     signingConfigs {
