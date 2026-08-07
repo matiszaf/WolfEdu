@@ -1,5 +1,11 @@
 # Changelog
-## [4.0.0] — Sync Beta
+
+## 4.0.1
+- Włączono AndroidX wymagany przez Firebase Authentication i Firestore.
+- Włączono Jetifier dla zgodności zależności.
+- Naprawiono błąd `mergeReleaseNativeLibs` w GitHub Actions.
+
+[4.0.0] — Sync Beta
 
 ### Dodano
 - Firebase Authentication: rejestracja i logowanie e-mail/hasło.
