@@ -1,5 +1,15 @@
 # Changelog
 
+## 4.1.0
+- nowy WolfSync dla struktury `schools/{schoolId}`
+- profil użytkownika i rola szkoły
+- wybór aktywnej szkoły
+- plan lekcji realtime z panelu WWW
+- klasy, przedmioty i nauczyciele pobierani z Firestore
+- stary `users/{uid}/wolfedu/main` pozostaje jako fallback
+
+# Changelog
+
 ## 4.0.2
 - Naprawiono połączenie z nazwanym Firestore `default` zamiast domyślnej bazy `(default)`.
 - Ulepszono obsługę trybu offline WolfSync.

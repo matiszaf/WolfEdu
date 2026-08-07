@@ -66,7 +66,7 @@ jobs:
       - name: Udostępnij podpisane APK
         uses: actions/upload-artifact@v4
         with:
-          name: WolfEdu-podpisany-4.0.2-WolfSync
+          name: WolfEdu-podpisany-4.1.0-SchoolSync
           path: app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
           retention-days: 30

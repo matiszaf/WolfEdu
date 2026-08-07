@@ -1,4 +1,4 @@
-# WolfEdu 4.0 — Sync Beta
+# WolfEdu 4.1 — Sync Beta
 
 WolfEdu to polski dziennik szkolny na Androida z ocenami, wagami, frekwencją, planem lekcji, zadaniami i synchronizacją między urządzeniami.
 
@@ -27,3 +27,7 @@ Artefakt wynikowy:
 ```text
 WolfEdu-podpisany-4.0.0-Sync/app-release.apk
 ```
+
+
+## WolfSync 2
+Android 4.1 czyta aktywną szkołę z `users/{uid}.activeSchoolId` i plan z `schools/{schoolId}/timetable`.
