@@ -899,11 +899,11 @@ public final class FirebaseSyncBridge {
         if (user == null) {
             stopLegacyListener();
             stopSchoolListeners();
-            call("window.wolfSyncAuth(false,'')");
+            call("window.wolfSyncAuth(false,'','')");
         } else {
             startLegacyListener(user);
             startSchoolSync(user);
-            call("window.wolfSyncAuth(true," + JSONObject.quote(user.getEmail() == null ? "" : user.getEmail()) + ")");
+            call("window.wolfSyncAuth(true," + JSONObject.quote(user.getEmail() == null ? "" : user.getEmail()) + "," + JSONObject.quote(user.getUid()) + ")");
         }
     }
 
