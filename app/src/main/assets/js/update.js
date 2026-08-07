@@ -5,7 +5,7 @@ let wolfUpdate={
   downloadState:'',message:''
 };
 
-function hasUpdateBridge(){return typeof WolfUpdate!=='undefined'&&WolfUpdate&&WolfUpdate.checkForUpdates}
+function hasUpdateBridge(){return typeof WolfUpdate!=='undefined'&&WolfUpdate&&WolfUpdate.getCurrentVersion&&WolfUpdate.downloadAndInstall}
 
 function updateStatusText(){
   if(!hasUpdateBridge())return 'Aktualizacje dostępne tylko w aplikacji Android.';
@@ -34,7 +34,6 @@ function updateHomeBannerHtml(){
   return `<div class="card" onclick="render('settings')" style="cursor:pointer"><div class="row between"><div><b>Dostępna aktualizacja ${esc(wolfUpdate.versionName)}</b><br><small>${wolfUpdate.mandatory?'Ta aktualizacja jest oznaczona jako wymagana.':'Dotknij, aby przejść do aktualizacji.'}</small></div><span class="badge">UPDATE</span></div></div>`;
 }
 
-let wolfUpdateTimeout=null;
 
 async function checkWolfUpdate(userInitiated=false){
   if(wolfUpdate.checking)return;
@@ -121,34 +120,6 @@ window.wolfUpdateCurrent=function(info){
   wolfUpdate.currentVersionName=info.versionName||wolfUpdate.currentVersionName;
   wolfUpdate.currentVersionCode=Number(info.versionCode||wolfUpdate.currentVersionCode||0);
   if(currentPage==='settings')settings();
-};
-
-window.wolfUpdateResult=function(result){
-  if(wolfUpdateTimeout){
-    clearTimeout(wolfUpdateTimeout);
-    wolfUpdateTimeout=null;
-  }
-
-  result=result||{};
-  wolfUpdate.checking=false;
-  wolfUpdate.ok=!!result.ok;
-  wolfUpdate.available=!!result.available;
-  wolfUpdate.currentVersionName=result.currentVersionName||wolfUpdate.currentVersionName;
-  wolfUpdate.currentVersionCode=Number(result.currentVersionCode||wolfUpdate.currentVersionCode||0);
-  wolfUpdate.versionName=result.versionName||'';
-  wolfUpdate.versionCode=Number(result.versionCode||0);
-  wolfUpdate.apkUrl=result.apkUrl||'';
-  wolfUpdate.changelog=result.changelog||'';
-  wolfUpdate.mandatory=!!result.mandatory;
-  wolfUpdate.message=result.message||'';
-
-  if(result.userInitiated){
-    toast(wolfUpdate.ok?(wolfUpdate.available?`Dostępna aktualizacja ${wolfUpdate.versionName}`:'WolfEdu jest aktualne'):(wolfUpdate.message||'Nie udało się sprawdzić aktualizacji'));
-  }else if(wolfUpdate.available){
-    toast(`Dostępna aktualizacja WolfEdu ${wolfUpdate.versionName}`);
-  }
-  if(currentPage==='settings')settings();
-  if(currentPage==='home'&&typeof home==='function')home();
 };
 
 window.wolfUpdateDownload=function(result){

@@ -36,11 +36,13 @@ jobs:
         id: version
         shell: bash
         run: |
+          BASE_VERSION="$(sed -n 's/^VERSION_NAME=//p' version.properties | head -n1)"
+          test -n "$BASE_VERSION" || { echo "Brakuje VERSION_NAME w version.properties"; exit 1; }
+
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
             VERSION_NAME="${GITHUB_REF_NAME#v}"
           else
-            BASE_VERSION="0.9.6"
-            VERSION_NAME="${BASE_VERSION}-dev.${GITHUB_RUN_NUMBER}"
+            VERSION_NAME="$BASE_VERSION"
           fi
 
           VERSION_CODE=$((906000 + GITHUB_RUN_NUMBER))
@@ -87,7 +89,7 @@ jobs:
       - name: Udostępnij APK
         uses: actions/upload-artifact@v4
         with:
-          name: WolfEdu-${{ steps.version.outputs.VERSION_NAME }}
+          name: WolfEdu-${{ steps.version.outputs.VERSION_NAME }}-build.${{ github.run_number }}
           path: dist/*.apk
           if-no-files-found: error
           retention-days: 30

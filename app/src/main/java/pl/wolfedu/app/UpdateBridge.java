@@ -65,7 +65,6 @@ public final class UpdateBridge {
 
     @JavascriptInterface
     public void checkForUpdates(boolean userInitiated) {
-        emitDownload("debug", "checkForUpdates() uruchomione");
         executor.execute(() -> {
             HttpURLConnection connection = null;
             try {
