@@ -4,13 +4,15 @@ on:
   workflow_dispatch:
     inputs:
       version_name:
-        description: "Wersja, np. 0.10.0"
+        description: "Wersja, np. 0.10.1"
         required: true
-        default: "0.10.0"
+        default: "0.10.1"
+
       changelog:
         description: "Krótki opis zmian"
         required: true
         default: "Nowa wersja WolfEdu"
+
       mandatory:
         description: "Aktualizacja wymagana?"
         required: true
@@ -21,13 +23,15 @@ permissions:
   contents: read
 
 jobs:
-  package-update:
-    name: Build podpisanej paczki aktualizacji
+  publish-update:
+    name: Build i publikacja OTA
     runs-on: ubuntu-latest
 
     steps:
-      - name: Pobierz kod
+      - name: Pobierz kod WolfEdu
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Java 17
         uses: actions/setup-java@v4
@@ -40,75 +44,176 @@ jobs:
         with:
           gradle-version: "8.13"
 
-      - name: Sprawdź sekrety
+      - name: Sprawdź wymagane sekrety
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
           GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
+          RELEASES_TOKEN: ${{ secrets.RELEASES_TOKEN }}
         run: |
           test -n "$KEYSTORE_BASE64" || { echo "Brakuje KEYSTORE_BASE64"; exit 1; }
           test -n "$KEYSTORE_PASSWORD" || { echo "Brakuje KEYSTORE_PASSWORD"; exit 1; }
           test -n "$KEY_ALIAS" || { echo "Brakuje KEY_ALIAS"; exit 1; }
           test -n "$KEY_PASSWORD" || { echo "Brakuje KEY_PASSWORD"; exit 1; }
           test -n "$GOOGLE_SERVICES_JSON_BASE64" || { echo "Brakuje GOOGLE_SERVICES_JSON_BASE64"; exit 1; }
+          test -n "$RELEASES_TOKEN" || { echo "Brakuje RELEASES_TOKEN"; exit 1; }
 
-      - name: Odtwórz keystore i Firebase config
+      - name: Sprawdź format wersji
         env:
-          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-          GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
-        run: |
-          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.keystore"
-          printf '%s' "$GOOGLE_SERVICES_JSON_BASE64" | base64 --decode > app/google-services.json
-          test -s "$RUNNER_TEMP/release.keystore"
-          test -s app/google-services.json
-
-      - name: Ustal wersję
+          VERSION_NAME: ${{ inputs.version_name }}
         shell: bash
         run: |
-          VERSION_NAME='${{ inputs.version_name }}'
+          if [[ ! "$VERSION_NAME" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][A-Za-z0-9._-]+)?$ ]]; then
+            echo "Nieprawidłowy version_name: $VERSION_NAME"
+            exit 1
+          fi
+
+      - name: Ustal wersję APK
+        env:
+          VERSION_NAME: ${{ inputs.version_name }}
+        shell: bash
+        run: |
           VERSION_CODE=$((1000000 + GITHUB_RUN_NUMBER))
+
           echo "WOLFEDU_VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
           echo "WOLFEDU_VERSION_CODE=$VERSION_CODE" >> "$GITHUB_ENV"
-          echo "VERSION_CODE=$VERSION_CODE" >> "$GITHUB_ENV"
 
-      - name: Build release
+          echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
+          echo "VERSION_CODE=$VERSION_CODE" >> "$GITHUB_ENV"
+          echo "RELEASE_TAG=v$VERSION_NAME" >> "$GITHUB_ENV"
+
+          echo "WolfEdu $VERSION_NAME ($VERSION_CODE)"
+
+      - name: Odtwórz keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          printf '%s' "$KEYSTORE_BASE64" \
+            | base64 --decode \
+            > "$RUNNER_TEMP/release.keystore"
+
+          test -s "$RUNNER_TEMP/release.keystore"
+
+      - name: Odtwórz google-services.json
+        env:
+          GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
+        run: |
+          printf '%s' "$GOOGLE_SERVICES_JSON_BASE64" \
+            | base64 --decode \
+            > app/google-services.json
+
+          test -s app/google-services.json
+
+      - name: Build podpisanego APK
         env:
           KEYSTORE_FILE: ${{ runner.temp }}/release.keystore
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: gradle --no-daemon :app:assembleRelease
+        run: |
+          gradle --no-daemon :app:assembleRelease
 
-      - name: Zbuduj paczkę OTA
-        shell: bash
+      - name: Przygotuj APK
+        run: |
+          mkdir -p dist
+
+          test -s app/build/outputs/apk/release/app-release.apk
+
+          cp \
+            app/build/outputs/apk/release/app-release.apk \
+            dist/WolfEdu.apk
+
+          test -s dist/WolfEdu.apk
+
+      - name: Wygeneruj version.json
         env:
-          VERSION_NAME: ${{ inputs.version_name }}
           CHANGELOG: ${{ inputs.changelog }}
           MANDATORY: ${{ inputs.mandatory }}
+        shell: bash
         run: |
-          mkdir -p dist/updates/android
-          cp app/build/outputs/apk/release/app-release.apk dist/updates/android/WolfEdu.apk
-          python3 - <<'PYJSON'
-          import json, os, datetime
-          payload = {
-            "versionName": os.environ["VERSION_NAME"],
-            "versionCode": int(os.environ["VERSION_CODE"]),
-            "mandatory": os.environ.get("MANDATORY", "false").lower() == "true",
-            "apkUrl": "https://wolf-edu.web.app/updates/android/WolfEdu.apk",
-            "changelog": os.environ.get("CHANGELOG", ""),
-            "publishedAt": datetime.datetime.now(datetime.timezone.utc).isoformat()
-          }
-          with open("dist/updates/android/version.json", "w", encoding="utf-8") as f:
-            json.dump(payload, f, ensure_ascii=False, indent=2)
-          print(json.dumps(payload, ensure_ascii=False, indent=2))
-          PYJSON
+          python3 - <<'PY'
+          import json
+          import os
+          import datetime
 
-      - name: Artefakt do publikacji
+          payload = {
+              "versionName": os.environ["VERSION_NAME"],
+              "versionCode": int(os.environ["VERSION_CODE"]),
+              "mandatory": os.environ.get("MANDATORY", "false").lower() == "true",
+              "apkUrl": "https://github.com/matiszaf/WolfEdu-Releases/releases/latest/download/WolfEdu.apk",
+              "changelog": os.environ.get("CHANGELOG", ""),
+              "publishedAt": datetime.datetime.now(
+                  datetime.timezone.utc
+              ).isoformat()
+          }
+
+          with open("dist/version.json", "w", encoding="utf-8") as f:
+              json.dump(payload, f, ensure_ascii=False, indent=2)
+
+          print(json.dumps(payload, ensure_ascii=False, indent=2))
+          PY
+
+      - name: Sprawdź czy wersja już istnieje
+        env:
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+        shell: bash
+        run: |
+          if gh release view "$RELEASE_TAG" \
+            --repo matiszaf/WolfEdu-Releases \
+            >/dev/null 2>&1
+          then
+            echo "Release $RELEASE_TAG już istnieje."
+            echo "Użyj nowego numeru wersji zamiast nadpisywać istniejące wydanie."
+            exit 1
+          fi
+
+      - name: Utwórz publiczny GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+          CHANGELOG: ${{ inputs.changelog }}
+        shell: bash
+        run: |
+          gh release create "$RELEASE_TAG" \
+            dist/WolfEdu.apk \
+            dist/version.json \
+            --repo matiszaf/WolfEdu-Releases \
+            --title "WolfEdu $VERSION_NAME" \
+            --notes "$CHANGELOG" \
+            --latest
+
+      - name: Opublikuj najnowszy version.json
+        env:
+          RELEASES_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+        shell: bash
+        run: |
+          git clone \
+            "https://x-access-token:${RELEASES_TOKEN}@github.com/matiszaf/WolfEdu-Releases.git" \
+            "$RUNNER_TEMP/WolfEdu-Releases"
+
+          cd "$RUNNER_TEMP/WolfEdu-Releases"
+
+          git config user.name "WolfEdu Release Bot"
+          git config user.email "actions@users.noreply.github.com"
+
+          cp "$GITHUB_WORKSPACE/dist/version.json" version.json
+
+          git add version.json
+
+          if git diff --cached --quiet; then
+            echo "version.json bez zmian."
+          else
+            git commit -m "release: WolfEdu $VERSION_NAME"
+            git push origin main
+          fi
+
+      - name: Zachowaj artefakt buildu
         uses: actions/upload-artifact@v4
         with:
           name: WolfEdu-Update-${{ inputs.version_name }}
-          path: dist/updates/android/*
+          path: |
+            dist/WolfEdu.apk
+            dist/version.json
           if-no-files-found: error
           retention-days: 30
