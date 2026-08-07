@@ -21,7 +21,7 @@ import java.util.Map;
 public class ConsoleBridge {
     private final WebView webView;
     private final FirebaseAuth auth = FirebaseAuth.getInstance();
-    private final FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private final FirebaseFirestore db = FirebaseFirestore.getInstance("default");
 
     private ListenerRegistration schoolsListener;
     private ListenerRegistration adminsListener;
