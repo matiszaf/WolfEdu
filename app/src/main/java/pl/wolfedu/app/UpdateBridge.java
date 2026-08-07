@@ -26,7 +26,7 @@ import java.util.concurrent.Executors;
 
 public final class UpdateBridge {
     private static final String UPDATE_MANIFEST_URL =
-            "https://wolf-edu.web.app/updates/android/version.json";
+            "https://raw.githubusercontent.com/matiszaf/WolfEdu-Releases/main/version.json";
 
     private final Activity activity;
     private final WebView webView;
