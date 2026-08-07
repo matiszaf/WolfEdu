@@ -16,6 +16,7 @@ public class MainActivity extends Activity {
     private static final int REQUEST_EXPORT_JSON = 501;
     private WebView webView;
     private String pendingExportJson;
+    private UpdateBridge updateBridge;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,6 +33,8 @@ public class MainActivity extends Activity {
 
         webView.addJavascriptInterface(new FirebaseSyncBridge(webView), "WolfSync");
         webView.addJavascriptInterface(new NativeBridge(), "WolfNative");
+        updateBridge = new UpdateBridge(this, webView);
+        webView.addJavascriptInterface(updateBridge, "WolfUpdate");
         webView.setWebViewClient(new WebViewClient());
         webView.loadUrl("file:///android_asset/index.html");
     }
@@ -77,6 +80,18 @@ public class MainActivity extends Activity {
 
     private void callJs(String code) {
         if (webView != null) webView.post(() -> webView.evaluateJavascript(code, null));
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (updateBridge != null) updateBridge.onResume();
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (updateBridge != null) updateBridge.destroy();
+        super.onDestroy();
     }
 
     @Override

@@ -4,3 +4,4 @@ build/
 app/build/
 .wolfedu-package-backup-*/
 migrate-package.sh
+.wolfedu-update-backup-*/
