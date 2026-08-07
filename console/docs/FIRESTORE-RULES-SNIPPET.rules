@@ -1,0 +1,22 @@
+// DODAJ do obecnego service cloud.firestore { match /databases/{database}/documents { ... } }
+
+// Helper globalnego operatora:
+function isSystemAdmin() {
+  return request.auth != null
+         && exists(/databases/$(database)/documents/systemAdmins/$(request.auth.uid));
+}
+
+// Globalni administratorzy.
+// Bootstrap pierwszego wpisu wykonaj ręcznie w Firebase Console.
+match /systemAdmins/{uid} {
+  allow read: if isSystemAdmin();
+  allow create, update: if isSystemAdmin();
+  allow delete: if isSystemAdmin() && uid != request.auth.uid;
+}
+
+// W ISTNIEJĄCYM match /schools/{schoolId} dodaj isSystemAdmin():
+// allow read: if isMember(schoolId) || isSystemAdmin();
+// allow update: if isAdmin(schoolId) || isSystemAdmin();
+//
+// Jeżeli masz osobne reguły subkolekcji schools/{schoolId}/..., Console 0.1.0 ich nie czyta.
+// Do dashboardu i listy szkół wystarcza globalny read dokumentów schools.
