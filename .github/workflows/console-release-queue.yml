@@ -61,6 +61,7 @@ jobs:
 
       - name: Pobierz kolejkę z Firestore
         if: steps.active.outputs.active == '0'
+        timeout-minutes: 2
         env:
           FIREBASE_OTA_EMAIL: ${{ secrets.FIREBASE_OTA_EMAIL }}
           FIREBASE_OTA_PASSWORD: ${{ secrets.FIREBASE_OTA_PASSWORD }}
