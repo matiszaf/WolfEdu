@@ -258,10 +258,17 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
-          cat selected-release.json \
-            | gh workflow run publish-wolfedu-update.yml \
-                --repo "$GITHUB_REPOSITORY" \
-                --ref main \
-                --json
+          VERSION_NAME="$(python3 -c 'import json; print(json.load(open("selected-release.json"))["version_name"])')"
+          CHANGELOG="$(python3 -c 'import json; print(json.load(open("selected-release.json"))["changelog"])')"
+          MANDATORY="$(python3 -c 'import json; print("true" if json.load(open("selected-release.json"))["mandatory"] else "false")')"
+
+          echo "Uruchamiam publikację: $VERSION_NAME | mandatory=$MANDATORY"
+
+          gh workflow run publish-wolfedu-update.yml \
+            --repo "$GITHUB_REPOSITORY" \
+            --ref main \
+            -f "version_name=$VERSION_NAME" \
+            -f "changelog=$CHANGELOG" \
+            -f "mandatory=$MANDATORY"
 
           echo "Workflow publikacji został uruchomiony."
