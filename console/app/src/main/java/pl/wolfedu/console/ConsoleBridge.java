@@ -17,6 +17,10 @@ import org.json.JSONObject;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 
 public class ConsoleBridge {
     private final WebView webView;
@@ -53,6 +57,57 @@ public class ConsoleBridge {
     @JavascriptInterface
     public void requestState() {
         handleAuthState(auth.getCurrentUser());
+    }
+
+    @JavascriptInterface
+    public void requestEnvironment() {
+        FirebaseUser user = auth.getCurrentUser();
+        JSONObject o = new JSONObject();
+        try {
+            o.put("consoleVersion", BuildConfig.VERSION_NAME);
+            o.put("consoleVersionCode", BuildConfig.VERSION_CODE);
+            o.put("uid", user == null ? "" : user.getUid());
+            o.put("email", user == null ? "" : value(user.getEmail()));
+            o.put("role", adminProfile == null ? "" : value(adminProfile.getString("role")));
+            o.put("firestoreDatabase", "default");
+        } catch (Exception ignored) {}
+        evaluate("window.consoleEnvironment && window.consoleEnvironment(" + o + ")");
+    }
+
+    @JavascriptInterface
+    public void requestReleaseInfo() {
+        new Thread(() -> {
+            HttpURLConnection connection = null;
+            try {
+                URL url = new URL(
+                    "https://raw.githubusercontent.com/matiszaf/WolfEdu-Releases/main/version.json?t="
+                    + System.currentTimeMillis()
+                );
+                connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod("GET");
+                connection.setConnectTimeout(8000);
+                connection.setReadTimeout(8000);
+                connection.setUseCaches(false);
+                connection.setRequestProperty("Cache-Control", "no-cache");
+
+                int status = connection.getResponseCode();
+                if (status < 200 || status >= 300) throw new Exception("HTTP " + status);
+
+                StringBuilder body = new StringBuilder();
+                try (BufferedReader reader = new BufferedReader(
+                        new InputStreamReader(connection.getInputStream()))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) body.append(line);
+                }
+
+                JSONObject payload = new JSONObject(body.toString());
+                evaluate("window.consoleReleaseInfo && window.consoleReleaseInfo(" + payload + ")");
+            } catch (Exception err) {
+                evaluate("window.consoleReleaseError && window.consoleReleaseError(" + js(friendly(err.getMessage())) + ")");
+            } finally {
+                if (connection != null) connection.disconnect();
+            }
+        }).start();
     }
 
     @JavascriptInterface
@@ -187,6 +242,9 @@ public class ConsoleBridge {
                         put(o, "schoolYear", d.get("schoolYear"));
                         put(o, "ownerUid", d.get("ownerUid"));
                         put(o, "systemStatus", d.get("systemStatus"));
+                        put(o, "address", d.get("address"));
+                        put(o, "email", d.get("email"));
+                        put(o, "phone", d.get("phone"));
                     } catch (Exception ignored) {}
                     arr.put(o);
                 }
