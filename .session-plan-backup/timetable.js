@@ -1,27 +1,7 @@
 const days=['Poniedziałek','Wtorek','Środa','Czwartek','Piątek'];
 function plan(){
   let schoolName=wolfSchool.schoolName||db.school;setHead('Plan lekcji',schoolName);
-  if(wolfSchool.activeSchoolId){
-    if(!wolfSchool.classes.length){
-      app.innerHTML=`<div class="card">
-        <div class="row between">
-          <div>
-            <h2 style="margin:0">Plan z WolfCloud</h2>
-            <small>${esc(schoolName)} · konto i szkoła są połączone</small>
-          </div>
-          <span class="badge">${esc(wolfSchool.role||'użytkownik')}</span>
-        </div>
-        <div class="warn" style="margin-top:12px">
-          <b>Brak dostępnych klas</b><br>
-          Plan jest połączony z WolfCloud, ale lista klas jest jeszcze pusta albo nadal się synchronizuje.
-        </div>
-        <button class="secondary" style="width:100%;margin-top:10px"
-          onclick="WolfSync.requestSchoolData();toast('Odświeżam dane szkoły…')">
-          Odśwież dane szkoły
-        </button>
-      </div>`;
-      return;
-    }
+  if(wolfSchool.activeSchoolId&&wolfSchool.classes.length){
     let selected=localStorage.getItem('wolfEduPlanClass')||wolfSchool.classes[0].id;
     if(!wolfSchool.classes.some(c=>c.id===selected))selected=wolfSchool.classes[0].id;
     localStorage.setItem('wolfEduPlanClass',selected);
