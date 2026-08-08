@@ -14,22 +14,29 @@
       <span class="eyebrow">WOLFEDU SYSTEM</span>
       <h1>Console</h1>
       <p>Centrum operatorskie platformy WolfEdu.</p>
+
       <input id="email" type="email" autocomplete="email" placeholder="E-mail administratora">
       <input id="password" type="password" autocomplete="current-password" placeholder="Hasło">
       <button id="loginBtn" onclick="login()">Zaloguj do Console</button>
+
       <div id="gateMsg" class="hint"></div>
-      <div class="gate-security">Dostęp wyłącznie dla kont z <code>systemAdmins</code>.</div>
+      <div class="gate-security">
+        Dostęp wyłącznie dla kont zapisanych w <code>systemAdmins</code>.
+      </div>
     </div>
   </div>
 
   <div id="shell" class="shell hidden">
     <header>
-      <div>
+      <div class="header-copy">
         <span class="eyebrow">WOLFEDU CONSOLE 2.0</span>
         <h1 id="pageTitle">System</h1>
         <small id="pageSubtitle">Panel operatorski</small>
       </div>
-      <button class="header-account" onclick="render('diagnostics')"><span id="headerAvatar">W</span></button>
+
+      <button class="header-account" onclick="render('diagnostics')" aria-label="Diagnostyka">
+        <span id="headerAvatar">W</span>
+      </button>
     </header>
 
     <main id="app"></main>
@@ -44,6 +51,7 @@
   </div>
 
   <div id="toast" class="toast"></div>
+
   <script src="js/app.js"></script>
 </body>
 </html>
