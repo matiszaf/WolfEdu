@@ -71,53 +71,82 @@ jobs:
           test -n "$FIREBASE_OTA_PASSWORD" || { echo "Brakuje FIREBASE_OTA_PASSWORD"; exit 1; }
           test -n "$FIREBASE_WEB_API_KEY" || { echo "Brakuje FIREBASE_WEB_API_KEY"; exit 1; }
 
-          python3 - <<'PYAUTH'
-          import json
-          import os
-          import urllib.request
+          mkdir -p /tmp/wolfedu-firestore
+          cd /tmp/wolfedu-firestore
 
-          payload = json.dumps({
-              "email": os.environ["FIREBASE_OTA_EMAIL"],
-              "password": os.environ["FIREBASE_OTA_PASSWORD"],
-              "returnSecureToken": True
-          }).encode()
+          npm init -y >/dev/null 2>&1
+          npm install firebase@12 --no-audit --no-fund >/dev/null
 
-          req = urllib.request.Request(
-              "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key="
-              + os.environ["FIREBASE_WEB_API_KEY"],
-              data=payload,
-              headers={"Content-Type": "application/json"},
-              method="POST"
-          )
+          cat > read-queue.mjs <<'NODE'
+          import { initializeApp } from "firebase/app";
+          import {
+            getAuth,
+            signInWithEmailAndPassword
+          } from "firebase/auth";
+          import {
+            getFirestore,
+            collection,
+            getDocs
+          } from "firebase/firestore";
+          import { writeFile } from "node:fs/promises";
 
-          with urllib.request.urlopen(req) as r:
-              data = json.load(r)
+          const app = initializeApp({
+            apiKey: process.env.FIREBASE_WEB_API_KEY,
+            authDomain: "wolf-edu.firebaseapp.com",
+            projectId: "wolf-edu"
+          });
 
-          token = data.get("idToken")
-          if not token:
-              raise SystemExit("Firebase Auth nie zwrócił idToken")
+          const auth = getAuth(app);
 
-          with open("firebase-id-token.txt", "w", encoding="utf-8") as f:
-              f.write(token)
-          PYAUTH
+          await signInWithEmailAndPassword(
+            auth,
+            process.env.FIREBASE_OTA_EMAIL,
+            process.env.FIREBASE_OTA_PASSWORD
+          );
 
-          ID_TOKEN="$(cat firebase-id-token.txt)"
+          console.log("Firebase Auth: OK");
 
-          HTTP_CODE="$(
-            curl -sS \
-              -H "Authorization: Bearer $ID_TOKEN" \
-              -o release-queue.json \
-              -w "%{http_code}" \
-              "https://firestore.googleapis.com/v1/projects/wolf-edu/databases/default/documents/releaseRequests?pageSize=100"
-          )"
+          const db = getFirestore(app, "default");
+          const snapshot = await getDocs(
+            collection(db, "releaseRequests")
+          );
 
-          echo "Firestore HTTP: $HTTP_CODE"
+          const documents = snapshot.docs.map(doc => {
+            const data = doc.data();
 
-          if [[ "$HTTP_CODE" != "200" ]]; then
-            cat release-queue.json
-            exit 1
-          fi
+            return {
+              name: doc.ref.path,
+              fields: {
+                versionName: {
+                  stringValue: String(data.versionName ?? doc.id)
+                },
+                changelog: {
+                  stringValue: String(data.changelog ?? "")
+                },
+                mandatory: {
+                  booleanValue: Boolean(data.mandatory)
+                },
+                source: {
+                  stringValue: String(data.source ?? "")
+                }
+              }
+            };
+          });
 
+          await writeFile(
+            process.env.GITHUB_WORKSPACE + "/release-queue.json",
+            JSON.stringify({ documents }, null, 2),
+            "utf8"
+          );
+
+          console.log(
+            `Firestore SDK: pobrano ${documents.length} żądań OTA.`
+          );
+          NODE
+
+          node read-queue.mjs
+
+          cd "$GITHUB_WORKSPACE"
           python3 -m json.tool release-queue.json >/dev/null
 
       - name: Wybierz następną wersję
