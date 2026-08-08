@@ -44,7 +44,7 @@ function render(page){
   document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===currentPage));
   ({dashboard,schools:schoolsView,admins:adminsView,releases:releasesView,diagnostics:diagnosticsView,schoolDetails:schoolDetailsView}[currentPage]||dashboard)();
 }
-function schoolStatus(s){return (s.systemStatus||'active')==='suspended'?'suspended':'active'}
+function statusOfSchool(s){return (s.systemStatus||'active')==='suspended'?'suspended':'active'}
 function detailCard(label,value){return `<div class="detail-card"><small>${esc(label)}</small><b>${esc(value||'—')}</b></div>`}
 
 function dashboard(){
