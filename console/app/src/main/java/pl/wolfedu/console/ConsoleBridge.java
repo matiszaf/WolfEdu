@@ -125,23 +125,39 @@ public class ConsoleBridge {
 
     @JavascriptInterface
     public void setSchoolStatus(String schoolId, String status) {
+        setSchoolStatusDetailed(schoolId, status, "");
+    }
+
+    @JavascriptInterface
+    public void setSchoolStatusDetailed(String schoolId, String status, String reason) {
         FirebaseUser user = auth.getCurrentUser();
         if (user == null || adminProfile == null || schoolId == null || schoolId.isBlank()) return;
 
         String clean = status == null ? "" : status.trim().toLowerCase();
-        if (!clean.equals("active") && !clean.equals("suspended")) {
+        if (!clean.equals("active") && !clean.equals("suspended") && !clean.equals("maintenance")) {
             emitError("Nieprawidłowy status szkoły.");
             return;
         }
 
+        String cleanReason = reason == null ? "" : reason.trim();
+
         Map<String, Object> payload = new HashMap<>();
         payload.put("systemStatus", clean);
+        payload.put("systemStatusReason", clean.equals("active") ? "" : cleanReason);
         payload.put("systemStatusUpdatedAt", FieldValue.serverTimestamp());
         payload.put("systemStatusUpdatedBy", user.getUid());
+        payload.put("systemStatusUpdatedByEmail", value(user.getEmail()));
 
         db.collection("schools").document(schoolId)
                 .set(payload, SetOptions.merge())
-                .addOnSuccessListener(done -> emitMessage("Zmieniono status szkoły."))
+                .addOnSuccessListener(done -> {
+                    String label = clean.equals("active")
+                            ? "Szkoła została aktywowana."
+                            : clean.equals("maintenance")
+                            ? "Włączono tryb konserwacji szkoły."
+                            : "Szkoła została zawieszona.";
+                    emitMessage(label);
+                })
                 .addOnFailureListener(err -> emitError(friendly(err.getMessage())));
     }
 
@@ -255,6 +271,10 @@ public class ConsoleBridge {
                         put(o, "schoolYear", d.get("schoolYear"));
                         put(o, "ownerUid", d.get("ownerUid"));
                         put(o, "systemStatus", d.get("systemStatus"));
+                        put(o, "systemStatusReason", d.get("systemStatusReason"));
+                        put(o, "systemStatusUpdatedBy", d.get("systemStatusUpdatedBy"));
+                        put(o, "systemStatusUpdatedByEmail", d.get("systemStatusUpdatedByEmail"));
+                        put(o, "systemStatusUpdatedAt", d.get("systemStatusUpdatedAt"));
                         put(o, "address", d.get("address"));
                         put(o, "email", d.get("email"));
                         put(o, "phone", d.get("phone"));
