@@ -61,9 +61,50 @@ jobs:
 
       - name: Pobierz kolejkę z Firestore
         if: steps.active.outputs.active == '0'
+        env:
+          FIREBASE_OTA_EMAIL: ${{ secrets.FIREBASE_OTA_EMAIL }}
+          FIREBASE_OTA_PASSWORD: ${{ secrets.FIREBASE_OTA_PASSWORD }}
+          FIREBASE_WEB_API_KEY: ${{ secrets.FIREBASE_WEB_API_KEY }}
         shell: bash
         run: |
+          test -n "$FIREBASE_OTA_EMAIL" || { echo "Brakuje FIREBASE_OTA_EMAIL"; exit 1; }
+          test -n "$FIREBASE_OTA_PASSWORD" || { echo "Brakuje FIREBASE_OTA_PASSWORD"; exit 1; }
+          test -n "$FIREBASE_WEB_API_KEY" || { echo "Brakuje FIREBASE_WEB_API_KEY"; exit 1; }
+
+          python3 - <<'PYAUTH'
+          import json
+          import os
+          import urllib.request
+
+          payload = json.dumps({
+              "email": os.environ["FIREBASE_OTA_EMAIL"],
+              "password": os.environ["FIREBASE_OTA_PASSWORD"],
+              "returnSecureToken": True
+          }).encode()
+
+          req = urllib.request.Request(
+              "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key="
+              + os.environ["FIREBASE_WEB_API_KEY"],
+              data=payload,
+              headers={"Content-Type": "application/json"},
+              method="POST"
+          )
+
+          with urllib.request.urlopen(req) as r:
+              data = json.load(r)
+
+          token = data.get("idToken")
+          if not token:
+              raise SystemExit("Firebase Auth nie zwrócił idToken")
+
+          with open("firebase-id-token.txt", "w", encoding="utf-8") as f:
+              f.write(token)
+          PYAUTH
+
+          ID_TOKEN="$(cat firebase-id-token.txt)"
+
           curl -fsSL \
+            -H "Authorization: Bearer $ID_TOKEN" \
             "https://firestore.googleapis.com/v1/projects/wolf-edu/databases/default/documents/releaseRequests?pageSize=100" \
             -o release-queue.json
 
@@ -140,7 +181,7 @@ jobs:
 
           print(
               "Wybrano:",
-              selected["versionName"],
+              selected["version_name"],
               "| mandatory:",
               selected["mandatory"]
           )
