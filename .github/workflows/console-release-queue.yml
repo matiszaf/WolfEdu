@@ -103,10 +103,20 @@ jobs:
 
           ID_TOKEN="$(cat firebase-id-token.txt)"
 
-          curl -fsSL \
-            -H "Authorization: Bearer $ID_TOKEN" \
-            "https://firestore.googleapis.com/v1/projects/wolf-edu/databases/default/documents/releaseRequests?pageSize=100" \
-            -o release-queue.json
+          HTTP_CODE="$(
+            curl -sS \
+              -H "Authorization: Bearer $ID_TOKEN" \
+              -o release-queue.json \
+              -w "%{http_code}" \
+              "https://firestore.googleapis.com/v1/projects/wolf-edu/databases/default/documents/releaseRequests?pageSize=100"
+          )"
+
+          echo "Firestore HTTP: $HTTP_CODE"
+
+          if [[ "$HTTP_CODE" != "200" ]]; then
+            cat release-queue.json
+            exit 1
+          fi
 
           python3 -m json.tool release-queue.json >/dev/null
 
