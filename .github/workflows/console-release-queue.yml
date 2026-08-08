@@ -159,6 +159,8 @@ jobs:
           console.log(
             `Firestore SDK: pobrano ${documents.length} żądań OTA.`
           );
+
+          process.exit(0);
           NODE
 
           node read-queue.mjs
