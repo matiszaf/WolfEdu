@@ -65,8 +65,8 @@ public class ConsoleBridge {
         JSONObject o = new JSONObject();
         try {
             android.content.pm.PackageInfo info =
-                    activity.getPackageManager().getPackageInfo(
-                            activity.getPackageName(), 0
+                    webView.getContext().getPackageManager().getPackageInfo(
+                            webView.getContext().getPackageName(), 0
                     );
 
             o.put(
