@@ -64,8 +64,21 @@ public class ConsoleBridge {
         FirebaseUser user = auth.getCurrentUser();
         JSONObject o = new JSONObject();
         try {
-            o.put("consoleVersion", BuildConfig.VERSION_NAME);
-            o.put("consoleVersionCode", BuildConfig.VERSION_CODE);
+            android.content.pm.PackageInfo info =
+                    activity.getPackageManager().getPackageInfo(
+                            activity.getPackageName(), 0
+                    );
+
+            o.put(
+                    "consoleVersion",
+                    info.versionName == null ? "unknown" : info.versionName
+            );
+
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                o.put("consoleVersionCode", info.getLongVersionCode());
+            } else {
+                o.put("consoleVersionCode", info.versionCode);
+            }
             o.put("uid", user == null ? "" : user.getUid());
             o.put("email", user == null ? "" : value(user.getEmail()));
             o.put("role", adminProfile == null ? "" : value(adminProfile.getString("role")));
