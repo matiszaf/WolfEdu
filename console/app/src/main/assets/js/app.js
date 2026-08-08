@@ -17,6 +17,10 @@ let environment={
 let releaseInfo=null;
 let releaseLoading=false;
 let releaseError='';
+let releaseRequests=[];
+let releaseQueueLoaded=false;
+let releaseQueueLoading=false;
+let releaseQueueError='';
 
 const $=s=>document.querySelector(s);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({
@@ -130,6 +134,36 @@ window.consoleReleaseError=message=>{
   if(currentPage==='releases'){
     render('releases');
   }
+};
+
+
+window.consoleReleaseRequests=x=>{
+  releaseRequests=Array.isArray(x)?x:[];
+  releaseQueueLoaded=true;
+  releaseQueueLoading=false;
+  releaseQueueError='';
+
+  if(currentPage==='releases'){
+    render('releases');
+  }
+};
+
+window.consoleReleaseQueueError=message=>{
+  releaseQueueLoaded=true;
+  releaseQueueLoading=false;
+  releaseQueueError=message||'Nie udało się pobrać kolejki aktualizacji.';
+
+  if(currentPage==='releases'){
+    render('releases');
+  }
+};
+
+window.consoleReleaseQueued=version=>{
+  releaseQueueLoaded=false;
+  releaseQueueLoading=false;
+  toast(`WolfEdu ${version} dodano do kolejki.`);
+  refreshReleaseInfo();
+  refreshReleaseQueue();
 };
 
 window.consoleError=message=>{
@@ -768,6 +802,34 @@ function removeAdmin(uid){
   }
 }
 
+function parseVersion(v){
+  const m=String(v||'').trim().match(/^(\d+)\.(\d+)\.(\d+)$/);
+  return m?[Number(m[1]),Number(m[2]),Number(m[3])]:null;
+}
+
+function compareVersions(a,b){
+  const av=parseVersion(a);
+  const bv=parseVersion(b);
+
+  if(!av&&!bv)return 0;
+  if(!av)return -1;
+  if(!bv)return 1;
+
+  for(let i=0;i<3;i++){
+    if(av[i]!==bv[i])return av[i]-bv[i];
+  }
+
+  return 0;
+}
+
+function nextSuggestedVersion(){
+  const current=parseVersion(releaseInfo?.versionName);
+
+  if(!current)return '0.1.0';
+
+  return `${current[0]}.${current[1]}.${current[2]+1}`;
+}
+
 function refreshReleaseInfo(){
   if(releaseLoading)return;
 
@@ -781,8 +843,164 @@ function refreshReleaseInfo(){
   WolfConsole.requestReleaseInfo();
 }
 
+function refreshReleaseQueue(){
+  if(releaseQueueLoading)return;
+
+  releaseQueueLoading=true;
+  releaseQueueError='';
+
+  if(currentPage==='releases'){
+    releasesView();
+  }
+
+  WolfConsole.requestReleaseRequests();
+}
+
+function releaseRequestStatus(req){
+  if(
+    releaseInfo?.versionName &&
+    compareVersions(releaseInfo.versionName,req.versionName)>=0
+  ){
+    return 'published';
+  }
+
+  return 'queued';
+}
+
+function releaseQueueHtml(){
+  const sorted=[...releaseRequests].sort(
+    (a,b)=>Number(b.createdAtMillis||0)-Number(a.createdAtMillis||0)
+  );
+
+  if(releaseQueueLoading&&!releaseQueueLoaded){
+    return `<section class="card loading-card">
+      <div class="spinner"></div>
+      <b>Pobieram kolejkę publikacji…</b>
+    </section>`;
+  }
+
+  if(releaseQueueError){
+    return `<section class="card error-card">
+      <b>Błąd kolejki</b>
+      <small>${esc(releaseQueueError)}</small>
+      <button class="secondary full top-gap" onclick="refreshReleaseQueue()">
+        Spróbuj ponownie
+      </button>
+    </section>`;
+  }
+
+  return `<section class="card">
+    <div class="section-head">
+      <div>
+        <h2>Kolejka publikacji</h2>
+        <small>GitHub sprawdza ją automatycznie co 5 minut</small>
+      </div>
+
+      <button class="link-btn" onclick="refreshReleaseQueue()">
+        Odśwież
+      </button>
+    </div>
+
+    ${sorted.slice(0,8).map(req=>{
+      const status=releaseRequestStatus(req);
+
+      return `<div class="release-queue-item">
+        <div class="release-queue-version">
+          <b>${esc(req.versionName||'—')}</b>
+          <small>${req.mandatory?'WYMAGANA':'opcjonalna'}</small>
+        </div>
+
+        <div class="grow">
+          <span>${esc(req.changelog||'Brak changelogu')}</span>
+          <small>
+            ${req.createdAtMillis
+              ? new Date(req.createdAtMillis).toLocaleString('pl-PL')
+              : 'oczekuje na timestamp'
+            }
+          </small>
+        </div>
+
+        <span class="badge ${status==='published'?'ok':'maintenance'}">
+          ${status==='published'?'OPUBLIKOWANA':'OCZEKUJE'}
+        </span>
+      </div>`;
+    }).join('')||
+      `<div class="empty-mini">
+        Brak żądań publikacji z Console.
+      </div>`
+    }
+  </section>`;
+}
+
+function queueWolfEduRelease(btn){
+  if(systemRole!=='creator'){
+    toast('Tylko creator może publikować aktualizacje.');
+    return;
+  }
+
+  const version=$('#releaseVersion')?.value?.trim()||'';
+  const changelog=$('#releaseChangelog')?.value?.trim()||'';
+  const mandatory=!!$('#releaseMandatory')?.checked;
+
+  if(!parseVersion(version)){
+    toast('Wersja musi mieć format X.Y.Z');
+    return;
+  }
+
+  if(
+    releaseInfo?.versionName &&
+    compareVersions(version,releaseInfo.versionName)<=0
+  ){
+    toast(`Wersja musi być nowsza niż ${releaseInfo.versionName}.`);
+    return;
+  }
+
+  if(!changelog){
+    toast('Wpisz changelog.');
+    return;
+  }
+
+  const existing=releaseRequests.some(
+    r=>String(r.versionName||'')===version
+  );
+
+  if(existing){
+    toast(`Wersja ${version} już jest w kolejce.`);
+    return;
+  }
+
+  if(!confirm(
+    `Dodać WolfEdu ${version} do kolejki OTA?\n\n`+
+    `${mandatory?'Aktualizacja WYMAGANA':'Aktualizacja opcjonalna'}`
+  )){
+    return;
+  }
+
+  if(btn){
+    btn.disabled=true;
+    btn.textContent='Dodaję do kolejki…';
+  }
+
+  WolfConsole.createReleaseRequest(
+    version,
+    changelog,
+    mandatory
+  );
+
+  setTimeout(()=>{
+    if(btn){
+      btn.disabled=false;
+      btn.textContent='Publikuj przez OTA';
+    }
+  },3500);
+}
+
 function releasesView(){
-  setHead('Release Center','Stan publikacji aplikacji WolfEdu');
+  setHead('Release Center','Publikowanie aktualizacji WolfEdu');
+
+  if(!releaseQueueLoaded&&!releaseQueueLoading){
+    setTimeout(refreshReleaseQueue,0);
+  }
 
   app.innerHTML=`
     <section class="hero release-hero">
@@ -797,7 +1015,7 @@ function releasesView(){
         <p>
           ${releaseInfo
             ? 'Aktualna publiczna wersja aplikacji.'
-            : 'Bezpieczny podgląd WolfEdu-Releases.'
+            : 'Stan WolfEdu-Releases.'
           }
         </p>
       </div>
@@ -835,28 +1053,16 @@ function releasesView(){
         </section>
 
         <section class="card">
-          <h2>Changelog</h2>
+          <h2>Aktualny changelog</h2>
           <div class="changelog">
             ${esc(releaseInfo.changelog||'Brak changelogu.')}
           </div>
-        </section>
-
-        <section class="card">
-          <h2>Źródło APK</h2>
-          <code class="code-block">
-            ${esc(releaseInfo.apkUrl||'—')}
-          </code>
-          <button class="secondary full" onclick="refreshReleaseInfo()">
-            Odśwież stan OTA
-          </button>
         </section>`
       : (!releaseLoading&&!releaseError)
       ? `<section class="card release-start">
           <span>↻</span>
           <b>Sprawdź aktualny release</b>
-          <small>
-            Console odczyta publiczny version.json bez tokena GitHub.
-          </small>
+          <small>Console odczyta publiczny version.json.</small>
           <button onclick="refreshReleaseInfo()">
             Pobierz stan OTA
           </button>
@@ -864,18 +1070,69 @@ function releasesView(){
       : ''
     }
 
-    <section class="card publish-card">
-      <div class="publish-lock">🔒</div>
-      <div class="grow">
-        <span class="eyebrow">STAGE 2</span>
-        <h2>Publikowanie z Console</h2>
-        <p class="muted">
-          Publikacja zostanie podpięta przez bezpieczny backend.
-          Token GitHuba nie trafi do APK.
-        </p>
-      </div>
-      <button disabled>Publikuj</button>
-    </section>`;
+    ${systemRole==='creator'
+      ? `<section class="card publish-card-v2">
+          <div class="section-head">
+            <div>
+              <span class="eyebrow">PUBLIKACJA</span>
+              <h2>Nowa wersja WolfEdu</h2>
+              <small>
+                Żądanie trafi do Firestore, a GitHub Actions odbierze je automatycznie.
+              </small>
+            </div>
+          </div>
+
+          <label class="release-field">
+            <span>Numer wersji</span>
+            <input
+              id="releaseVersion"
+              inputmode="decimal"
+              placeholder="0.11.7"
+              value="${esc(nextSuggestedVersion())}">
+          </label>
+
+          <label class="release-field">
+            <span>Changelog</span>
+            <textarea
+              id="releaseChangelog"
+              maxlength="2000"
+              placeholder="Co zmienia ta wersja?"></textarea>
+          </label>
+
+          <label class="release-mandatory">
+            <input id="releaseMandatory" type="checkbox">
+            <div>
+              <b>Aktualizacja wymagana</b>
+              <small>
+                Użytkownik powinien zainstalować tę wersję przed dalszym korzystaniem.
+              </small>
+            </div>
+          </label>
+
+          <button
+            class="full publish-release-btn"
+            onclick="queueWolfEduRelease(this)">
+            Publikuj przez OTA
+          </button>
+
+          <div class="release-free-note">
+            <b>Tryb darmowy</b>
+            <small>
+              Publikacja rozpocznie się przy najbliższym sprawdzeniu kolejki przez GitHub Actions.
+            </small>
+          </div>
+        </section>`
+      : `<section class="card readonly-note">
+          <b>Publikacja tylko dla creator</b>
+          <small>
+            Administrator systemowy może oglądać Release Center,
+            ale nie może tworzyć nowych wydań.
+          </small>
+        </section>`
+    }
+
+    ${releaseQueueHtml()}
+  `;
 }
 
 function diagnosticsView(){

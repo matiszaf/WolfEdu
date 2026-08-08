@@ -1,0 +1,167 @@
+name: WolfEdu Console Release Queue
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/5 * * * *"
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: wolfedu-console-release-queue
+  cancel-in-progress: false
+
+jobs:
+  dispatch:
+    name: Sprawdź kolejkę OTA
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Sprawdź aktywną publikację
+        id: active
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          ACTIVE="$(
+            gh run list \
+              --repo "$GITHUB_REPOSITORY" \
+              --workflow publish-wolfedu-update.yml \
+              --limit 30 \
+              --json status \
+              --jq '[.[] | select(
+                .status == "queued" or
+                .status == "in_progress" or
+                .status == "waiting" or
+                .status == "pending" or
+                .status == "requested"
+              )] | length'
+          )"
+
+          echo "active=$ACTIVE" >> "$GITHUB_OUTPUT"
+          echo "Aktywne publikacje: $ACTIVE"
+
+      - name: Zatrzymaj jeśli trwa już publikacja
+        if: steps.active.outputs.active != '0'
+        run: |
+          echo "Publikacja WolfEdu już trwa. Kolejka zostanie sprawdzona przy następnym przebiegu."
+
+      - name: Pobierz aktualną wersję OTA
+        if: steps.active.outputs.active == '0'
+        shell: bash
+        run: |
+          curl -fsSL \
+            "https://raw.githubusercontent.com/matiszaf/WolfEdu-Releases/main/version.json?t=$(date +%s)" \
+            -o current-version.json \
+            || printf '{"versionName":"0.0.0"}\n' > current-version.json
+
+          cat current-version.json
+
+      - name: Pobierz kolejkę z Firestore
+        if: steps.active.outputs.active == '0'
+        shell: bash
+        run: |
+          curl -fsSL \
+            "https://firestore.googleapis.com/v1/projects/wolf-edu/databases/(default)/documents/releaseRequests?pageSize=100" \
+            -o release-queue.json
+
+          python3 -m json.tool release-queue.json >/dev/null
+
+      - name: Wybierz następną wersję
+        if: steps.active.outputs.active == '0'
+        id: select
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          import re
+          from pathlib import Path
+
+          current_data = json.loads(
+              Path("current-version.json").read_text(encoding="utf-8")
+          )
+          queue_data = json.loads(
+              Path("release-queue.json").read_text(encoding="utf-8")
+          )
+
+          def parse(v):
+              if not re.fullmatch(r"\d+\.\d+\.\d+", str(v or "")):
+                  return None
+              return tuple(map(int, v.split(".")))
+
+          current = parse(current_data.get("versionName")) or (0, 0, 0)
+
+          candidates = []
+
+          for doc in queue_data.get("documents", []):
+              fields = doc.get("fields", {})
+
+              version = fields.get("versionName", {}).get("stringValue", "")
+              changelog = fields.get("changelog", {}).get("stringValue", "")
+              mandatory = fields.get("mandatory", {}).get("booleanValue", False)
+              source = fields.get("source", {}).get("stringValue", "")
+
+              parsed = parse(version)
+
+              if (
+                  parsed is None
+                  or parsed <= current
+                  or source != "console"
+                  or not changelog.strip()
+              ):
+                  continue
+
+              candidates.append({
+                  "parsed": parsed,
+                  "versionName": version,
+                  "changelog": changelog,
+                  "mandatory": bool(mandatory),
+              })
+
+          candidates.sort(key=lambda x: x["parsed"])
+
+          if not candidates:
+              Path("selected-release.json").write_text(
+                  "",
+                  encoding="utf-8"
+              )
+              print("Brak oczekujących wersji.")
+              raise SystemExit(0)
+
+          selected = candidates[0]
+          selected.pop("parsed")
+
+          Path("selected-release.json").write_text(
+              json.dumps(selected, ensure_ascii=False),
+              encoding="utf-8"
+          )
+
+          print(
+              "Wybrano:",
+              selected["versionName"],
+              "| mandatory:",
+              selected["mandatory"]
+          )
+          PY
+
+          if [[ -s selected-release.json ]]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Uruchom publikację WolfEdu
+        if: steps.active.outputs.active == '0' && steps.select.outputs.found == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          cat selected-release.json \
+            | gh workflow run publish-wolfedu-update.yml \
+                --repo "$GITHUB_REPOSITORY" \
+                --ref main \
+                --json
+
+          echo "Workflow publikacji został uruchomiony."

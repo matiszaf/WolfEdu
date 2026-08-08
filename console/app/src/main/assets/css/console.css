@@ -86,120 +86,104 @@ nav button span{max-width:100%;overflow:hidden;text-overflow:ellipsis;font-size:
 @media(min-width:760px){.metrics{grid-template-columns:repeat(5,minmax(0,1fr))}.dashboard-grid{grid-template-columns:1.25fr .75fr;gap:12px}.detail-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(max-width:560px){main{padding-left:11px;padding-right:11px}header{padding-left:13px;padding-right:13px}.metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.metric{padding:11px}.metric b{font-size:21px}.detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.detail-card{padding:11px}.row-main{align-items:flex-start}.row-main .badge{max-width:92px;overflow:hidden;text-overflow:ellipsis}.row-actions{margin-left:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.row-actions button{width:100%;min-width:0}.system-control-grid{grid-template-columns:1fr}.admin-controls{grid-template-columns:1fr 1fr}.admin-controls select{grid-column:1/-1}.publish-card{display:grid;grid-template-columns:auto minmax(0,1fr)}.publish-card button{grid-column:1/-1;width:100%}}
 @media(max-width:365px){.metric small{font-size:9px}.metric span{font-size:8px}.detail-grid{grid-template-columns:1fr}.hero h2{font-size:22px}.online-pill{font-size:8px}nav button{font-size:15px}nav button span{font-size:8px}}
-
 /* =========================================
    WolfEdu Console - Mobile Width Fix
    ========================================= */
-
-html,
-body {
-  width: 100%;
-  max-width: 100%;
-  overflow-x: hidden;
+html,body{width:100%;max-width:100%;overflow-x:hidden}
+.shell,main,#app{width:100%;max-width:100%;min-width:0}
+main{box-sizing:border-box}
+.hero,.card,.metric,.item,.dashboard-grid,.dashboard-grid>*,.metrics,.detail-grid{min-width:0;max-width:100%}
+.console-hero>div,.release-hero>div,.school-hero>div,.diagnostic-hero>div,.section-head>div,.row-main>div{min-width:0}
+.hero h2,.hero p,.section-head h2,.section-head small{max-width:100%;overflow-wrap:anywhere}
+.section-head{min-width:0}.section-head .link-btn{flex:0 0 auto;white-space:nowrap}
+.row-main{min-width:0;max-width:100%}.row-main .grow{min-width:0;overflow:hidden}
+.badge,.online-pill{flex:0 0 auto}
+nav{width:100%;max-width:100vw;overflow:hidden}
+@media(max-width:560px){
+  main{padding-left:12px;padding-right:12px}
+  .console-hero,.release-hero,.school-hero,.diagnostic-hero{width:100%;min-width:0}
+  .metrics{width:100%;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .metric{width:auto;min-width:0}
+  .dashboard-grid{width:100%;grid-template-columns:minmax(0,1fr)}
+  .card,.hero{width:100%}
 }
-
-.shell,
-main,
-#app {
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
+/* =========================================
+   Release Center Stage 2 Free
+   ========================================= */
+.publish-card-v2 textarea{
+  width:100%;
+  min-height:118px;
+  resize:vertical;
+  padding:13px;
+  border-radius:14px;
+  border:1px solid var(--line);
+  background:var(--surface2);
+  color:var(--text);
+  font:inherit;
+  outline:none;
 }
-
-main {
-  box-sizing: border-box;
+.publish-card-v2 textarea:focus{border-color:var(--primary)}
+.release-field{display:block;margin-top:11px}
+.release-field>span{
+  display:block;
+  margin:0 2px 5px;
+  color:var(--muted);
+  font-size:10px;
+  font-weight:800;
 }
-
-.hero,
-.card,
-.metric,
-.item,
-.dashboard-grid,
-.dashboard-grid > *,
-.metrics,
-.detail-grid {
-  min-width: 0;
-  max-width: 100%;
+.release-mandatory{
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  margin:13px 0;
+  padding:12px;
+  border-radius:14px;
+  background:var(--surface2);
 }
-
-.console-hero > div,
-.release-hero > div,
-.school-hero > div,
-.diagnostic-hero > div,
-.section-head > div,
-.row-main > div {
-  min-width: 0;
+.release-mandatory input{
+  width:20px;
+  height:20px;
+  min-width:20px;
+  margin:1px 0 0;
 }
-
-.hero h2,
-.hero p,
-.section-head h2,
-.section-head small {
-  max-width: 100%;
-  overflow-wrap: anywhere;
+.release-mandatory b,.release-mandatory small{display:block}
+.release-mandatory small{margin-top:3px;line-height:1.4}
+.publish-release-btn{margin-top:4px}
+.release-free-note{
+  margin-top:11px;
+  padding:11px;
+  border-radius:13px;
+  background:var(--ok-bg);
 }
-
-.section-head {
-  min-width: 0;
+.release-free-note b,.release-free-note small{display:block}
+.release-free-note b{color:var(--ok)}
+.release-free-note small{margin-top:3px}
+.release-queue-item{
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr) auto;
+  align-items:center;
+  gap:10px;
+  padding:11px 0;
+  border-bottom:1px solid var(--line);
 }
-
-.section-head .link-btn {
-  flex: 0 0 auto;
-  white-space: nowrap;
+.release-queue-item:last-child{border-bottom:0}
+.release-queue-version b,.release-queue-version small,
+.release-queue-item .grow span,.release-queue-item .grow small{display:block}
+.release-queue-version b{font-size:14px;color:var(--primary)}
+.release-queue-version small{margin-top:2px;font-size:8px}
+.release-queue-item .grow span{
+  font-size:11px;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
 }
-
-.row-main {
-  min-width: 0;
-  max-width: 100%;
-}
-
-.row-main .grow {
-  min-width: 0;
-  overflow: hidden;
-}
-
-.badge,
-.online-pill {
-  flex: 0 0 auto;
-}
-
-nav {
-  width: 100%;
-  max-width: 100vw;
-  overflow: hidden;
-}
-
-@media (max-width:560px) {
-  main {
-    padding-left: 12px;
-    padding-right: 12px;
+.release-queue-item .grow small{margin-top:3px;font-size:9px}
+@media(max-width:430px){
+  .release-queue-item{
+    grid-template-columns:auto minmax(0,1fr);
   }
-
-  .console-hero,
-  .release-hero,
-  .school-hero,
-  .diagnostic-hero {
-    width: 100%;
-    min-width: 0;
-  }
-
-  .metrics {
-    width: 100%;
-    grid-template-columns: repeat(2, minmax(0,1fr));
-  }
-
-  .metric {
-    width: auto;
-    min-width: 0;
-  }
-
-  .dashboard-grid {
-    width: 100%;
-    grid-template-columns: minmax(0,1fr);
-  }
-
-  .card,
-  .hero {
-    width: 100%;
+  .release-queue-item>.badge{
+    grid-column:2;
+    justify-self:start;
   }
 }
