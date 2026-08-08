@@ -74,8 +74,13 @@ jobs:
           mkdir -p /tmp/wolfedu-firestore
           cd /tmp/wolfedu-firestore
 
+          echo "[1/4] npm init"
           npm init -y >/dev/null 2>&1
-          npm install firebase@12 --no-audit --no-fund >/dev/null
+
+          echo "[2/4] instalacja Firebase SDK"
+          npm install firebase@12 --no-audit --no-fund
+
+          echo "[3/4] uruchamianie skryptu Firebase"
 
           cat > read-queue.mjs <<'NODE'
           import { initializeApp } from "firebase/app";
@@ -104,12 +109,23 @@ jobs:
             process.env.FIREBASE_OTA_PASSWORD
           );
 
-          console.log("Firebase Auth: OK");
+          console.log("[JS] Firebase Auth: OK");
+          console.log("[JS] start getFirestore");
 
           const db = getFirestore(app, "default");
-          const snapshot = await getDocs(
-            collection(db, "releaseRequests")
-          );
+
+          console.log("[JS] start getDocs");
+          const snapshot = await Promise.race([
+            getDocs(collection(db, "releaseRequests")),
+            new Promise((_, reject) =>
+              setTimeout(
+                () => reject(new Error("TIMEOUT: getDocs po 30 sekundach")),
+                30000
+              )
+            )
+          ]);
+
+          console.log("[JS] getDocs: OK");
 
           const documents = snapshot.docs.map(doc => {
             const data = doc.data();
@@ -146,6 +162,7 @@ jobs:
 
           node read-queue.mjs
 
+          echo "[4/4] kolejka pobrana"
           cd "$GITHUB_WORKSPACE"
           python3 -m json.tool release-queue.json >/dev/null
 
