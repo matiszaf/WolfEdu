@@ -123,6 +123,106 @@ public class ConsoleBridge {
         }).start();
     }
 
+
+    @JavascriptInterface
+    public void requestReleaseRequests() {
+        db.collection("releaseRequests")
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    JSONArray arr = new JSONArray();
+
+                    for (DocumentSnapshot d : snapshot.getDocuments()) {
+                        JSONObject o = new JSONObject();
+                        try {
+                            o.put("id", d.getId());
+                            put(o, "versionName", d.get("versionName"));
+                            put(o, "changelog", d.get("changelog"));
+                            put(o, "mandatory", d.get("mandatory"));
+                            put(o, "source", d.get("source"));
+
+                            if (d.getTimestamp("createdAt") != null) {
+                                o.put(
+                                    "createdAtMillis",
+                                    d.getTimestamp("createdAt").toDate().getTime()
+                                );
+                            } else {
+                                o.put("createdAtMillis", 0);
+                            }
+                        } catch (Exception ignored) {}
+
+                        arr.put(o);
+                    }
+
+                    evaluate(
+                        "window.consoleReleaseRequests && window.consoleReleaseRequests("
+                        + arr + ")"
+                    );
+                })
+                .addOnFailureListener(err ->
+                    evaluate(
+                        "window.consoleReleaseQueueError && window.consoleReleaseQueueError("
+                        + js(friendly(err.getMessage())) + ")"
+                    )
+                );
+    }
+
+    @JavascriptInterface
+    public void createReleaseRequest(
+            String versionName,
+            String changelog,
+            boolean mandatory
+    ) {
+        FirebaseUser user = auth.getCurrentUser();
+
+        if (user == null || adminProfile == null) {
+            emitError("Brak aktywnej sesji Console.");
+            return;
+        }
+
+        String role = value(adminProfile.getString("role"));
+        if (!"creator".equals(role)) {
+            emitError("Tylko creator może publikować aktualizacje WolfEdu.");
+            return;
+        }
+
+        String version = versionName == null ? "" : versionName.trim();
+        String notes = changelog == null ? "" : changelog.trim();
+
+        if (!version.matches("^[0-9]+\\.[0-9]+\\.[0-9]+$")) {
+            emitError("Wersja musi mieć format X.Y.Z, np. 0.11.7.");
+            return;
+        }
+
+        if (notes.isEmpty()) {
+            emitError("Changelog nie może być pusty.");
+            return;
+        }
+
+        if (notes.length() > 2000) {
+            emitError("Changelog może mieć maksymalnie 2000 znaków.");
+            return;
+        }
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("versionName", version);
+        payload.put("changelog", notes);
+        payload.put("mandatory", mandatory);
+        payload.put("source", "console");
+        payload.put("createdAt", FieldValue.serverTimestamp());
+
+        db.collection("releaseRequests")
+                .document(version)
+                .set(payload)
+                .addOnSuccessListener(done -> {
+                    evaluate(
+                        "window.consoleReleaseQueued && window.consoleReleaseQueued("
+                        + js(version) + ")"
+                    );
+                    requestReleaseRequests();
+                })
+                .addOnFailureListener(err -> emitError(friendly(err.getMessage())));
+    }
+
     @JavascriptInterface
     public void setSchoolStatus(String schoolId, String status) {
         setSchoolStatusDetailed(schoolId, status, "");

@@ -87,7 +87,7 @@ if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; the
 fi
 
 # Wydajemy tylko zmiany Console + workflow/skrypt Console.
-git add console .github/workflows/build-console.yml scripts/release-console.sh scripts/verify-console.sh
+git add console .github/workflows/build-console.yml .github/workflows/console-release-queue.yml scripts/release-console.sh scripts/verify-console.sh docs/FIRESTORE-RELEASE-QUEUE.rules
 
 # Blokada sekretów.
 DANGEROUS="$(
