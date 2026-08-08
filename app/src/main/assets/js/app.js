@@ -21,9 +21,54 @@ function save(){db._sync=db._sync||{};db._sync.updatedAt=Date.now();localStorage
 function setHead(t,s){$('#headTitle').textContent=t;$('#headSub').textContent=s||db.school}
 function setup(){setHead('WolfEdu','Pierwsza konfiguracja');$('#nav').classList.add('hidden');app.innerHTML=`<section class="setup"><div class="card"><h2>Utwórz swoją szkołę</h2><p class="muted">Dane zostają wyłącznie na tym telefonie.</p><input id="school" placeholder="Nazwa szkoły, np. SP 35 w Gdyni"><button style="width:100%;margin-top:8px" onclick="createSchool()">Uruchom WolfEdu</button></div></section>`}
 function createSchool(){let v=$('#school').value.trim();if(!v)return toast('Wpisz nazwę szkoły');db.school=v;save();render('home')}
+function schoolSystemBlocked(){
+  return !!wolfSchool.activeSchoolId &&
+    ['suspended','maintenance'].includes(
+      String(wolfSchool.systemStatus||'active').toLowerCase()
+    );
+}
+
+function renderSchoolSystemLock(){
+  const maintenance=String(wolfSchool.systemStatus)==='maintenance';
+  setHead(
+    maintenance?'Przerwa techniczna':'Szkoła zawieszona',
+    wolfSchool.schoolName||'WolfEdu'
+  );
+
+  app.innerHTML=`
+    <section class="card" style="margin-top:18px;text-align:center;padding:28px 18px">
+      <div style="font-size:42px;margin-bottom:10px">${maintenance?'🛠':'⛔'}</div>
+      <h2>${maintenance?'Trwa konserwacja WolfCloud':'Dostęp do szkoły został zawieszony'}</h2>
+      <p class="muted" style="line-height:1.5">
+        ${esc(
+          wolfSchool.systemStatusReason||
+          (maintenance
+            ? 'Administrator systemu prowadzi prace techniczne.'
+            : 'Skontaktuj się z administratorem szkoły lub WolfEdu.')
+        )}
+      </p>
+      <div class="sync-note" style="margin-top:14px">
+        ${esc(wolfSchool.schoolName||'Aktywna szkoła')}
+      </div>
+      <button class="secondary btn-full" style="margin-top:14px"
+        onclick="render('settings')">
+        Konto i ustawienia
+      </button>
+    </section>`;
+}
+
 function render(p=page){
   page=p||'home';
   currentPage=page;
+
+  if(schoolSystemBlocked() && currentPage!=='settings'){
+    $('#nav').classList.remove('hidden');
+    document.querySelectorAll('nav button').forEach(
+      b=>b.classList.toggle('active',b.dataset.page===currentPage)
+    );
+    renderSchoolSystemLock();
+    return;
+  }
 
   if(!db.school&&!wolfSchool.schoolName)return setup();
 

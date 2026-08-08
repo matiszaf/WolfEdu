@@ -1,5 +1,5 @@
 let syncUid='';
-let wolfSchool={activeSchoolId:'',schoolName:'',role:'',schools:[],classes:[],students:[],subjects:[],teachers:[],grades:[],tasks:[],attendance:[],timetable:[],members:[],invites:[],myInvites:[]};
+let wolfSchool={activeSchoolId:'',schoolName:'',role:'',systemStatus:'active',systemStatusReason:'',schools:[],classes:[],students:[],subjects:[],teachers:[],grades:[],tasks:[],attendance:[],timetable:[],members:[],invites:[],myInvites:[]};
 window.wolfSchoolData=function(payload){
   WolfCore.finish('school-data');
 
@@ -8,6 +8,8 @@ window.wolfSchoolData=function(payload){
       activeSchoolId:'',
       schoolName:'',
       role:'',
+      systemStatus:'active',
+      systemStatusReason:'',
       schools:[],
       classes:[],
       students:[],
