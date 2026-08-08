@@ -17,6 +17,17 @@ fi
 
 cd "$ROOT"
 
+if [[ ! -x scripts/verify-console.sh ]]; then
+  echo "Brakuje scripts/verify-console.sh."
+  echo "Release Console został zatrzymany."
+  exit 1
+fi
+
+echo
+echo "Uruchamiam pełny preflight Console..."
+scripts/verify-console.sh
+echo
+
 BRANCH="$(git branch --show-current)"
 if [[ -z "$BRANCH" ]]; then
   echo "Nie można wydawać Console z detached HEAD."
@@ -76,7 +87,7 @@ if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; the
 fi
 
 # Wydajemy tylko zmiany Console + workflow/skrypt Console.
-git add console .github/workflows/build-console.yml scripts/release-console.sh
+git add console .github/workflows/build-console.yml scripts/release-console.sh scripts/verify-console.sh
 
 # Blokada sekretów.
 DANGEROUS="$(
