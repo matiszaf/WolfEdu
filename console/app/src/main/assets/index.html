@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <meta name="theme-color" content="#0b0f17">
+  <title>WolfEdu Console</title>
+  <link rel="stylesheet" href="css/console.css">
+</head>
+<body>
+  <div id="gate" class="gate">
+    <div class="gate-card">
+      <div class="console-mark">W</div>
+      <span class="eyebrow">WOLFEDU SYSTEM</span>
+      <h1>Console</h1>
+      <p>Centrum operatorskie platformy WolfEdu.</p>
+
+      <input id="email" type="email" autocomplete="email" placeholder="E-mail administratora">
+      <input id="password" type="password" autocomplete="current-password" placeholder="Hasło">
+      <button id="loginBtn" onclick="login()">Zaloguj do Console</button>
+
+      <div id="gateMsg" class="hint"></div>
+      <div class="gate-security">
+        Dostęp wyłącznie dla kont zapisanych w <code>systemAdmins</code>.
+      </div>
+    </div>
+  </div>
+
+  <div id="shell" class="shell hidden">
+    <header>
+      <div class="header-copy">
+        <span class="eyebrow">WOLFEDU CONSOLE 2.0</span>
+        <h1 id="pageTitle">System</h1>
+        <small id="pageSubtitle">Panel operatorski</small>
+      </div>
+
+      <button class="header-account" onclick="render('diagnostics')" aria-label="Diagnostyka">
+        <span id="headerAvatar">W</span>
+      </button>
+    </header>
+
+    <main id="app"></main>
+
+    <nav>
+      <button data-page="dashboard" class="active">⌂<span>System</span></button>
+      <button data-page="schools">▦<span>Szkoły</span></button>
+      <button data-page="admins">♚<span>Admini</span></button>
+      <button data-page="releases">↻<span>Release</span></button>
+      <button data-page="diagnostics">⚙<span>Diagnoza</span></button>
+    </nav>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

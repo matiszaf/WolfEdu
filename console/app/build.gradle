@@ -4,32 +4,26 @@ plugins {
 }
 
 android {
-    namespace 'pl.wolfedu.app'
+    namespace 'pl.wolfedu.console'
     compileSdk 35
 
     defaultConfig {
-        applicationId 'pl.wolfedu.app'
+        applicationId 'pl.wolfedu.console'
         minSdk 24
         targetSdk 35
 
-        def versionProps = new Properties()
-        def versionFile = rootProject.file('version.properties')
-        if (versionFile.exists()) {
-            versionFile.withInputStream { versionProps.load(it) }
-        }
+        def consoleVersionName =
+                System.getenv('WOLFEDU_CONSOLE_VERSION_NAME') ?:
+                project.findProperty('WOLFEDU_CONSOLE_VERSION_NAME') ?:
+                '0.1.0'
 
-        def wolfVersionName =
-                System.getenv('WOLFEDU_VERSION_NAME') ?:
-                project.findProperty('WOLFEDU_VERSION_NAME') ?:
-                versionProps.getProperty('VERSION_NAME', '0.10.5')
+        def consoleVersionCode =
+                (System.getenv('WOLFEDU_CONSOLE_VERSION_CODE') ?:
+                project.findProperty('WOLFEDU_CONSOLE_VERSION_CODE') ?:
+                '1000') as Integer
 
-        def wolfVersionCode =
-                (System.getenv('WOLFEDU_VERSION_CODE') ?:
-                project.findProperty('WOLFEDU_VERSION_CODE') ?:
-                versionProps.getProperty('VERSION_CODE', '12059999')) as Integer
-
-        versionCode wolfVersionCode
-        versionName wolfVersionName
+        versionCode consoleVersionCode
+        versionName consoleVersionName
     }
 
     signingConfigs {
@@ -39,11 +33,7 @@ android {
             def keyAliasValue = System.getenv('KEY_ALIAS')
             def keyPasswordValue = System.getenv('KEY_PASSWORD')
 
-            if (keystorePath &&
-                keystorePassword &&
-                keyAliasValue &&
-                keyPasswordValue) {
-
+            if (keystorePath && keystorePassword && keyAliasValue && keyPasswordValue) {
                 storeFile file(keystorePath)
                 storePassword keystorePassword
                 keyAlias keyAliasValue
@@ -56,6 +46,10 @@ android {
         release {
             signingConfig signingConfigs.release
             minifyEnabled false
+        }
+        debug {
+            applicationIdSuffix '.debug'
+            versionNameSuffix '-debug'
         }
     }
 }

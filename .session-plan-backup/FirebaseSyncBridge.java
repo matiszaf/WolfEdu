@@ -48,8 +48,6 @@ public final class FirebaseSyncBridge {
     private String activeSchoolId = "";
     private String activeSchoolName = "";
     private String activeRole = "";
-    private String activeSchoolSystemStatus = "active";
-    private String activeSchoolSystemStatusReason = "";
     private JSONArray schoolClasses = new JSONArray();
     private JSONArray schoolSubjects = new JSONArray();
     private JSONArray schoolTeachers = new JSONArray();
@@ -68,11 +66,6 @@ public final class FirebaseSyncBridge {
         this.auth = FirebaseAuth.getInstance();
         this.firestore = FirebaseFirestore.getInstance("default");
         auth.addAuthStateListener(ignored -> emitAuthState());
-    }
-
-    @JavascriptInterface
-    public void requestAuthState() {
-        emitAuthState();
     }
 
     @JavascriptInterface
@@ -155,10 +148,7 @@ public final class FirebaseSyncBridge {
     }
 
     private boolean hasActiveSchool() {
-        return activeSchoolId != null
-                && !activeSchoolId.isBlank()
-                && !"suspended".equals(activeSchoolSystemStatus)
-                && !"maintenance".equals(activeSchoolSystemStatus);
+        return activeSchoolId != null && !activeSchoolId.isBlank();
     }
 
     private Map<String, Object> auditPayload(FirebaseUser user) {
@@ -332,7 +322,7 @@ public final class FirebaseSyncBridge {
     public void addGrade(String studentId, String subjectId, String teacherId, double value, int weight,
                          String category, String comment, String date) {
         FirebaseUser user = auth.getCurrentUser();
-        if (user == null || !hasActiveSchool()) return;
+        if (user == null || activeSchoolId == null || activeSchoolId.isBlank()) return;
 
         Map<String, Object> payload = new HashMap<>();
         payload.put("studentId", studentId);
@@ -355,7 +345,7 @@ public final class FirebaseSyncBridge {
 
     @JavascriptInterface
     public void deleteGrade(String id) {
-        if (!hasActiveSchool() || id == null || id.isBlank()) return;
+        if (activeSchoolId == null || activeSchoolId.isBlank() || id == null || id.isBlank()) return;
         firestore.collection("schools").document(activeSchoolId).collection("grades").document(id).delete()
                 .addOnFailureListener(error -> emitSchoolError(friendly(error.getMessage())));
     }
@@ -364,7 +354,7 @@ public final class FirebaseSyncBridge {
     public void addTask(String classId, String studentId, String subjectId, String teacherId,
                         String title, String type, String note, String due) {
         FirebaseUser user = auth.getCurrentUser();
-        if (user == null || !hasActiveSchool()) return;
+        if (user == null || activeSchoolId == null || activeSchoolId.isBlank()) return;
 
         Map<String, Object> payload = new HashMap<>();
         payload.put("classId", classId);
@@ -389,7 +379,7 @@ public final class FirebaseSyncBridge {
     @JavascriptInterface
     public void setTaskDone(String id, boolean done) {
         FirebaseUser user = auth.getCurrentUser();
-        if (user == null || !hasActiveSchool() || id == null || id.isBlank()) return;
+        if (user == null || activeSchoolId == null || activeSchoolId.isBlank() || id == null || id.isBlank()) return;
 
         Map<String, Object> payload = new HashMap<>();
         payload.put("done", done);
@@ -406,7 +396,7 @@ public final class FirebaseSyncBridge {
     public void addAttendance(String studentId, String classId, String subjectId, String teacherId,
                               String date, String state, int lesson) {
         FirebaseUser user = auth.getCurrentUser();
-        if (user == null || !hasActiveSchool()) return;
+        if (user == null || activeSchoolId == null || activeSchoolId.isBlank()) return;
 
         Map<String, Object> payload = new HashMap<>();
         payload.put("studentId", studentId);
@@ -645,8 +635,6 @@ public final class FirebaseSyncBridge {
         stopActiveSchoolListeners();
         activeSchoolName = "";
         activeRole = "";
-        activeSchoolSystemStatus = "active";
-        activeSchoolSystemStatusReason = "";
         schoolClasses = new JSONArray();
         schoolSubjects = new JSONArray();
         schoolTeachers = new JSONArray();
@@ -667,20 +655,9 @@ public final class FirebaseSyncBridge {
         schoolListener = schoolRef.addSnapshotListener((snapshot, error) -> {
             if (error != null) { emitSchoolError(friendly(error.getMessage())); return; }
             activeSchoolName = snapshot != null && snapshot.exists() ? value(snapshot.getString("name")) : "";
-
-            if (snapshot != null && snapshot.exists()) {
-                String status = value(snapshot.getString("systemStatus")).trim().toLowerCase();
-                activeSchoolSystemStatus = status.isBlank() ? "active" : status;
-                activeSchoolSystemStatusReason = value(snapshot.getString("systemStatusReason"));
-
-                if (user.getUid().equals(snapshot.getString("ownerUid"))) {
-                    activeRole = "owner";
-                }
-            } else {
-                activeSchoolSystemStatus = "active";
-                activeSchoolSystemStatusReason = "";
+            if (snapshot != null && snapshot.exists() && user.getUid().equals(snapshot.getString("ownerUid"))) {
+                activeRole = "owner";
             }
-
             refreshAdminListeners(user, schoolRef);
             loadAvailableSchools(user);
             emitSchoolState();
@@ -868,8 +845,6 @@ public final class FirebaseSyncBridge {
             payload.put("activeSchoolId", activeSchoolId);
             payload.put("schoolName", activeSchoolName);
             payload.put("role", activeRole);
-            payload.put("systemStatus", activeSchoolSystemStatus);
-            payload.put("systemStatusReason", activeSchoolSystemStatusReason);
             payload.put("schools", availableSchools);
             payload.put("classes", schoolClasses);
             payload.put("subjects", schoolSubjects);
@@ -915,8 +890,6 @@ public final class FirebaseSyncBridge {
         activeSchoolId = "";
         activeSchoolName = "";
         activeRole = "";
-        activeSchoolSystemStatus = "active";
-        activeSchoolSystemStatusReason = "";
         availableSchools = new JSONArray();
         emitSchoolState();
     }

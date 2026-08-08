@@ -1,0 +1,29 @@
+function classes(){
+  const cloud=!!wolfSchool.activeSchoolId;
+  setHead('Klasy',wolfSchool.schoolName||db.school);
+
+  if(cloud){
+    const can=canManageSchool(), classes=wolfSchool.classes||[], students=wolfSchool.students||[];
+    app.innerHTML=`
+      ${can?`<div class="card"><h2>Dodaj klasę</h2><input id="cloudClassName" placeholder="np. 8B"><input id="cloudClassProfile" placeholder="Profil / opis"><button style="width:100%" onclick="addCloudClassMobile(this)">Dodaj klasę</button></div>`:''}
+      ${classes.map(c=>`<div class="card"><div class="row between"><div><h2 style="margin:0">Klasa ${esc(c.name)}</h2><small>${students.filter(s=>s.classId===c.id).length} uczniów${c.profile?' · '+esc(c.profile):''}</small></div>${can?`<button class="danger mini" onclick="deleteCloudClassMobile('${c.id}')">Usuń</button>`:''}</div>
+      ${students.filter(s=>s.classId===c.id).slice(0,5).map(s=>`<div class="item"><b>${esc(s.name)}</b>${s.number?`<small> · nr ${esc(s.number)}</small>`:''}</div>`).join('')||'<div class="empty">Brak uczniów</div>'}
+      ${students.filter(s=>s.classId===c.id).length>5?`<button class="linkbtn" onclick="render('studentsPage')">Pokaż wszystkich</button>`:''}</div>`).join('')||'<div class="card empty">Brak klas.</div>'}`;
+    return;
+  }
+
+  app.innerHTML=`<div class="card warn"><b>Tryb lokalny / legacy</b><br>Po przypisaniu konta do szkoły klasy będą synchronizowane przez WolfCloud.</div><div class="card"><h2>Dodaj klasę</h2><div class="row"><input id="className" placeholder="np. 8B"><button onclick="addClass()">Dodaj</button></div></div>${db.classes.map(c=>`<div class="card"><div class="row between"><div><h2 style="margin:0">Klasa ${esc(c.name)}</h2><small>${db.students.filter(s=>s.classId===c.id).length} uczniów</small></div><button class="danger mini" onclick="removeClass('${c.id}')">Usuń</button></div></div>`).join('')||'<div class="card empty">Najpierw dodaj klasę.</div>'}`;
+}
+function addCloudClassMobile(btn){
+  const name=$('#cloudClassName').value.trim();if(!name)return toast('Wpisz nazwę klasy');
+  btn.disabled=true;btn.textContent='Dodaję…';
+  WolfSync.addCloudClass(name,$('#cloudClassProfile').value.trim());
+}
+function deleteCloudClassMobile(id){if(confirm('Usunąć klasę? Uczniowie nie zostaną automatycznie usunięci.'))WolfSync.deleteCloudClass(id)}
+function addClass(){let v=$('#className').value.trim();if(!v)return;db.classes.push({id:id(),name:v});save();classes()}
+function removeClass(cid){if(!confirm('Usunąć klasę i jej dane?'))return;let ids=db.students.filter(s=>s.classId===cid).map(s=>s.id);db.classes=db.classes.filter(c=>c.id!==cid);db.students=db.students.filter(s=>s.classId!==cid);db.grades=db.grades.filter(g=>!ids.includes(g.studentId));db.attendance=db.attendance.filter(a=>!ids.includes(a.studentId));save();classes()}
+function addStudent(cid){let e=$('#student-'+cid),v=e.value.trim();if(!v)return;db.students.push({id:id(),classId:cid,name:v});save();classes()}
+function removeStudent(sid){db.students=db.students.filter(s=>s.id!==sid);db.grades=db.grades.filter(g=>g.studentId!==sid);db.attendance=db.attendance.filter(a=>a.studentId!==sid);save();classes()}
+function studentOptions(){return db.students.map(s=>{let c=db.classes.find(x=>x.id===s.classId);return `<option value="${s.id}">${esc(s.name)} (${esc(c?.name||'?')})</option>`}).join('')}
+function uniqueSubjects(){return [...new Set(db.grades.map(g=>g.subject.trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pl'))}
+function weightedAverage(list){let w=list.reduce((a,g)=>a+Number(g.weight||1),0);return w?list.reduce((a,g)=>a+Number(g.value)*Number(g.weight||1),0)/w:null}

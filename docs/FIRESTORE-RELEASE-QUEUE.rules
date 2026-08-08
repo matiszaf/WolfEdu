@@ -1,0 +1,42 @@
+// DODAJ wewnątrz:
+//
+// service cloud.firestore {
+//   match /databases/{database}/documents {
+//
+// W tym samym poziomie co /systemAdmins/{uid} i /schoolInvites/{inviteId}.
+
+match /releaseRequests/{versionId} {
+
+  // Publiczny odczyt jest celowy:
+  // bezpłatny GitHub Actions dispatcher odczytuje tę kolejkę
+  // przez Firestore REST bez sekretu.
+  //
+  // Dokument zawiera wyłącznie:
+  // versionName, changelog, mandatory, source, createdAt.
+  allow read: if true;
+
+  // Publikację może zlecić WYŁĄCZNIE systemowy creator.
+  allow create:
+    if isSystemCreator()
+    && request.resource.data.keys().hasOnly([
+      'versionName',
+      'changelog',
+      'mandatory',
+      'source',
+      'createdAt'
+    ])
+    && request.resource.data.versionName == versionId
+    && request.resource.data.versionName.matches(
+      '^[0-9]+[.][0-9]+[.][0-9]+$'
+    )
+    && request.resource.data.changelog is string
+    && request.resource.data.changelog.size() > 0
+    && request.resource.data.changelog.size() <= 2000
+    && request.resource.data.mandatory is bool
+    && request.resource.data.source == 'console';
+
+  // Żądania są immutable.
+  // Po opublikowaniu pozostają jako historia; dispatcher ignoruje
+  // wersje <= aktualnego version.json.
+  allow update, delete: if false;
+}
