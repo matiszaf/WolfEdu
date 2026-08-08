@@ -67,13 +67,42 @@ function dashboard(){
 }
 
 function schoolRow(s,controls=true){
-  const status=schoolStatus(s);
+  const status=statusOfSchool(s);
+
   return `<div class="item school-row">
-    <button class="row-main" onclick="openSchool('${esc(s.id)}')"><div class="school-icon">${esc((s.name||'S').charAt(0).toUpperCase())}</div><div class="grow"><b>${esc(s.name||'Szkoła')}</b><small>${[s.city,s.type,s.schoolYear].filter(Boolean).map(esc).join(' · ')||'Brak dodatkowych danych'}</small></div><span class="badge ${status==='active'?'ok':'warn'}">${status==='active'?'AKTYWNA':'ZAWIESZONA'}</span></button>
-    ${controls?`<div class="row-actions"><button class="secondary" onclick="openSchool('${esc(s.id)}')">Szczegóły</button><button class="${status==='active'?'danger':'secondary'}" onclick="toggleSchool('${esc(s.id)}','${status==='active'?'suspended':'active'}')">${status==='active'?'Zawieś':'Aktywuj'}</button></div>`:''}
+    <button class="row-main" onclick="openSchool('${esc(s.id)}')">
+      <div class="school-icon">${esc((s.name||'S').charAt(0).toUpperCase())}</div>
+      <div class="grow">
+        <b>${esc(s.name||'Szkoła')}</b>
+        <small>${[
+          s.city||'',
+          s.type||'',
+          s.schoolYear||''
+        ].filter(Boolean).map(esc).join(' · ')||'Brak dodatkowych danych'}</small>
+        ${status!=='active'&&s.systemStatusReason
+          ? `<small class="school-status-reason">${esc(s.systemStatusReason)}</small>`
+          : ''}
+      </div>
+      <span class="badge ${status==='active'?'ok':status==='maintenance'?'maintenance':'warn'}">
+        ${schoolStatusLabel(status)}
+      </span>
+    </button>
+
+    ${controls?`
+      <div class="row-actions system-actions">
+        <button class="secondary" onclick="openSchool('${esc(s.id)}')">Szczegóły</button>
+        ${status!=='active'
+          ? `<button class="activate-btn" onclick="changeSchoolSystemStatus('${esc(s.id)}','active')">Aktywuj</button>`
+          : ''}
+        ${status!=='maintenance'
+          ? `<button class="maintenance-btn" onclick="changeSchoolSystemStatus('${esc(s.id)}','maintenance')">Konserwacja</button>`
+          : ''}
+        ${status!=='suspended'
+          ? `<button class="danger" onclick="changeSchoolSystemStatus('${esc(s.id)}','suspended')">Zawieś</button>`
+          : ''}
+      </div>`:''}
   </div>`;
 }
-
 function schoolsView(){
   setHead('Szkoły','Zarządzanie instancjami WolfCloud');
   const q=schoolSearch.trim().toLowerCase();
@@ -90,14 +119,8 @@ function schoolDetailsView(){
     <section class="detail-grid">${detailCard('ID szkoły',s.id)}${detailCard('Właściciel UID',s.ownerUid||'—')}${detailCard('Rok szkolny',s.schoolYear||'—')}${detailCard('Typ',s.type||'—')}${detailCard('Adres',s.address||'—')}${detailCard('E-mail',s.email||'—')}${detailCard('Telefon',s.phone||'—')}${detailCard('Status',status)}</section>
     <section class="card"><h2>Kontrola systemowa</h2><small>Zmiana zapisuje się bezpośrednio w dokumencie szkoły.</small><button class="${status==='active'?'danger':'primary'} full top-gap" onclick="toggleSchool('${esc(s.id)}','${status==='active'?'suspended':'active'}')">${status==='active'?'Zawieś szkołę':'Ponownie aktywuj szkołę'}</button></section>`;
 }
-function toggleSchool(id,status){const text=status==='suspended'?'zawiesić':'aktywować';if(confirm(`Czy na pewno ${text} tę szkołę?`))WolfConsole.setSchoolStatus(id,status)}
-
-function adminsView(){
-  setHead('Administratorzy','Globalny dostęp do WolfEdu Console');
-  const creators=admins.filter(a=>a.role==='creator').length;
-  app.innerHTML=`<section class="metrics"><div class="metric"><small>Administratorzy</small><b>${admins.length}</b><span>łącznie</span></div><div class="metric"><small>Creator</small><b>${creators}</b><span>najwyższa rola</span></div></section>
-  <details class="card add-card"><summary><div><span class="add-icon">＋</span><div><b>Dodaj administratora</b><small>Globalny dostęp przez Firebase UID</small></div></div><span>Rozwiń</span></summary><div class="details-body"><input id="adminUid" placeholder="Firebase UID"><input id="adminEmail" type="email" placeholder="E-mail (opisowo)"><select id="adminRole"><option value="admin">Administrator</option><option value="creator">Creator</option></select><button class="full" onclick="addAdmin()">Dodaj dostęp</button></div></details>
-  <section class="card">${admins.map(a=>{const uid=a.uid||a.id,self=uid===currentUid;return `<div class="admin-item"><div class="admin-avatar">${esc((a.email||uid||'A').charAt(0).toUpperCase())}</div><div class="grow"><b>${esc(a.email||uid)}</b><small>${esc(uid)}${self?' · TO KONTO':''}</small></div><span class="badge">${esc(a.role||'admin')}</span><div class="admin-controls"><select id="role-${esc(a.id)}"><option value="admin" ${a.role==='admin'?'selected':''}>Administrator</option><option value="creator" ${a.role==='creator'?'selected':''}>Creator</option></select><button class="secondary" onclick="changeAdminRole('${esc(a.id)}')">Zapisz</button><button class="danger" ${self?'disabled':''} onclick="removeAdmin('${esc(a.id)}')">Usuń</button></div></div>`}).join('')||'<div class="empty-mini">Brak administratorów.</div>'}</section>`;
+function toggleSchool(id,status){
+  changeSchoolSystemStatus(id,status);
 }
 function addAdmin(){const uid=$('#adminUid').value.trim();if(!uid)return toast('Wpisz UID');WolfConsole.addSystemAdmin(uid,$('#adminEmail').value.trim(),$('#adminRole').value)}
 function changeAdminRole(uid){const el=$('#role-'+CSS.escape(uid));if(el)WolfConsole.updateSystemAdminRole(uid,el.value)}

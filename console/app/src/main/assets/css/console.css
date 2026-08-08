@@ -11,3 +11,46 @@ main{padding:8px 16px 22px;max-width:980px;margin:0 auto}.hero,.card{border:1px 
 nav{position:fixed;bottom:0;left:0;right:0;display:grid;grid-template-columns:repeat(5,1fr);padding:7px 7px 13px;background:#0f141dee;border-top:1px solid var(--line);backdrop-filter:blur(20px);z-index:10}nav button{background:transparent;color:var(--muted);display:grid;place-items:center;gap:2px;padding:8px 2px;border-radius:16px;font-size:17px}nav button span{font-size:9px}nav button.active{background:var(--primary-container);color:var(--primary)}
 .toast{position:fixed;left:50%;bottom:91px;transform:translateX(-50%) translateY(18px);background:#edf3ff;color:#13233b;padding:10px 14px;border-radius:13px;opacity:0;transition:.2s;z-index:20;max-width:90%}.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 @media(min-width:760px){.metrics{grid-template-columns:repeat(4,1fr)}.dashboard-grid{grid-template-columns:1.25fr .75fr;gap:12px}.detail-grid{grid-template-columns:repeat(4,1fr)}}@media(max-width:430px){.console-hero,.release-hero,.school-hero,.diagnostic-hero{align-items:flex-start}.publish-card{align-items:flex-start;flex-wrap:wrap}.publish-card button{width:100%}.admin-controls{grid-template-columns:1fr 1fr}.admin-controls select{grid-column:1/-1}}
+
+
+/* Console 2.0 - Mobile + System Control */
+.badge.maintenance{background:#4a3a17;color:#ffd58a}
+.maintenance-metric b{color:#ffd58a}
+.school-status-reason{color:#ffcc80!important;margin-top:5px!important}
+.system-actions{flex-wrap:wrap}
+.system-actions button{flex:1 1 auto;min-width:78px}
+.activate-btn{background:#12392a;color:#78d9a9}
+.maintenance-btn{background:#4a3a17;color:#ffd58a}
+.system-control-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.system-control-grid button{min-width:0;padding:11px 7px;font-size:11px}
+.system-reason-box{margin-top:12px;padding:12px;border-radius:14px;background:var(--surface2)}
+.system-reason-box b,.system-reason-box small{display:block}
+.system-reason-box small{margin-top:4px;color:var(--warn)}
+@media(max-width:560px){
+  main{padding-left:11px;padding-right:11px}
+  header{padding-left:13px;padding-right:13px}
+  .metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+  .metric{min-width:0;padding:11px}
+  .metric b{font-size:21px}
+  .detail-grid,.release-data-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .detail-card{min-width:0;padding:11px}
+  .row-main{align-items:flex-start}
+  .row-main .badge{max-width:92px;overflow:hidden;text-overflow:ellipsis}
+  .row-actions{margin-left:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .row-actions button{width:100%;min-width:0}
+  .system-control-grid{grid-template-columns:1fr}
+  .admin-item{grid-template-columns:auto minmax(0,1fr) auto}
+  .admin-controls{grid-template-columns:1fr 1fr}
+  .admin-controls select{grid-column:1/-1}
+  .publish-card{display:grid;grid-template-columns:auto 1fr}
+  .publish-card button{grid-column:1/-1}
+}
+@media(max-width:365px){
+  .metrics{grid-template-columns:1fr 1fr}
+  .metric small{font-size:9px}
+  .metric span{font-size:8px}
+  .detail-grid,.release-data-grid{grid-template-columns:1fr}
+  nav button{font-size:15px}
+  nav button span{font-size:8px}
+  .hero h2{font-size:22px}
+}
