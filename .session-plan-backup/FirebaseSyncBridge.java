@@ -69,11 +69,6 @@ public final class FirebaseSyncBridge {
     }
 
     @JavascriptInterface
-    public void requestAuthState() {
-        emitAuthState();
-    }
-
-    @JavascriptInterface
     public void register(String email, String password) {
         auth.createUserWithEmailAndPassword(email.trim(), password)
                 .addOnSuccessListener(result -> {
