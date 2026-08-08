@@ -64,7 +64,7 @@ jobs:
         shell: bash
         run: |
           curl -fsSL \
-            "https://firestore.googleapis.com/v1/projects/wolf-edu/databases/(default)/documents/releaseRequests?pageSize=100" \
+            "https://firestore.googleapis.com/v1/projects/wolf-edu/databases/default/documents/releaseRequests?pageSize=100" \
             -o release-queue.json
 
           python3 -m json.tool release-queue.json >/dev/null
@@ -115,7 +115,7 @@ jobs:
 
               candidates.append({
                   "parsed": parsed,
-                  "versionName": version,
+                  "version_name": version,
                   "changelog": changelog,
                   "mandatory": bool(mandatory),
               })
