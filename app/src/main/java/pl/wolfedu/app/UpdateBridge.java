@@ -267,6 +267,11 @@ public final class UpdateBridge {
         scheduler.shutdownNow();
     }
 
+    private boolean canInstallPackages() {
+        return Build.VERSION.SDK_INT < Build.VERSION_CODES.O
+                || activity.getPackageManager().canRequestPackageInstalls();
+    }
+
     private void requestInstallPermissionOrInstall(File apk) {
         if (apk == null || !apk.exists() || apk.length() == 0L) {
             pendingApkFile = null;
