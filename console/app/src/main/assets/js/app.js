@@ -893,7 +893,7 @@ function releaseQueueHtml(){
     <div class="section-head">
       <div>
         <h2>Kolejka publikacji</h2>
-        <small>GitHub sprawdza ją automatycznie co 5 minut</small>
+        <small>Kolejka sprawdzana automatycznie co 2 minuty</small>
       </div>
 
       <button class="link-btn" onclick="refreshReleaseQueue()">
