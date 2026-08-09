@@ -27,6 +27,8 @@ import java.io.InputStream;
 
 import android.content.Intent;
 import android.net.Uri;
+import android.provider.Settings;
+import android.os.Build;
 
 import androidx.core.content.FileProvider;
 
@@ -370,6 +372,38 @@ public class ConsoleBridge {
         if (!apkUrl.startsWith(
                 "https://github.com/matiszaf/WolfEdu-Releases/")) {
             emitError("Nieprawidłowe źródło aktualizacji.");
+            return;
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                && !webView.getContext()
+                    .getPackageManager()
+                    .canRequestPackageInstalls()) {
+
+            Intent permissionIntent = new Intent(
+                    Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                    Uri.parse(
+                            "package:" + webView.getContext().getPackageName()
+                    )
+            );
+
+            permissionIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
+            webView.post(() -> {
+                try {
+                    webView.getContext().startActivity(permissionIntent);
+                    emitMessage(
+                        "Zezwól WolfEdu Console na instalowanie aplikacji, "
+                        + "a następnie wróć i kliknij aktualizację ponownie."
+                    );
+                } catch (Exception err) {
+                    emitError(
+                        "Nie udało się otworzyć ustawień instalacji: "
+                        + friendly(err.getMessage())
+                    );
+                }
+            });
+
             return;
         }
 
