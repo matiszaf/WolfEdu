@@ -1,0 +1,466 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function schoolDoc(schoolId) {
+      return get(/databases/$(database)/documents/schools/$(schoolId));
+    }
+
+    function memberDoc(schoolId) {
+      return get(
+        /databases/$(database)/documents/schools/$(schoolId)/members/$(request.auth.uid)
+      );
+    }
+
+    function isOwner(schoolId) {
+      return signedIn()
+             && schoolDoc(schoolId).data.ownerUid == request.auth.uid;
+    }
+
+    function isMember(schoolId) {
+      return signedIn() && (
+        isOwner(schoolId) ||
+        exists(
+          /databases/$(database)/documents/schools/$(schoolId)/members/$(request.auth.uid)
+        )
+      );
+    }
+
+    function isAdmin(schoolId) {
+      return signedIn() && (
+        isOwner(schoolId) ||
+        (
+          exists(
+            /databases/$(database)/documents/schools/$(schoolId)/members/$(request.auth.uid)
+          )
+          &&
+          memberDoc(schoolId).data.role in [
+            'owner',
+            'admin',
+            'director'
+          ]
+        )
+      );
+    }
+
+
+    function isTeacher(schoolId) {
+      return signedIn()
+             && exists(
+               /databases/$(database)/documents/schools/$(schoolId)/members/$(request.auth.uid)
+             )
+             && memberDoc(schoolId).data.role == 'teacher';
+    }
+
+    function isAssignedTeacher(schoolId, teacherId) {
+      return isTeacher(schoolId)
+             && teacherId is string
+             && exists(
+               /databases/$(database)/documents/schools/$(schoolId)/teachers/$(teacherId)
+             )
+             && get(
+               /databases/$(database)/documents/schools/$(schoolId)/teachers/$(teacherId)
+             ).data.email == request.auth.token.email;
+    }
+
+
+    function isSystemAdmin() {
+      return signedIn()
+             && exists(
+               /databases/$(database)/documents/systemAdmins/$(request.auth.uid)
+             );
+    }
+
+    function isSystemCreator() {
+      return isSystemAdmin()
+             &&
+             get(
+               /databases/$(database)/documents/systemAdmins/$(request.auth.uid)
+             ).data.role == 'creator';
+    }
+
+
+    // =========================================================
+    // USERS
+    // =========================================================
+
+    match /users/{uid} {
+      allow read, create, update:
+        if signedIn() && request.auth.uid == uid;
+
+      allow delete: if false;
+    }
+
+
+    // =========================================================
+    // SCHOOLS
+    // =========================================================
+
+    match /schools/{schoolId} {
+
+      allow create:
+        if signedIn()
+        && request.resource.data.ownerUid == request.auth.uid;
+
+      // Członkowie widzą swoją szkołę.
+      // System Admin / Creator widzi wszystkie szkoły.
+      allow read:
+        if isSystemAdmin()
+        || (
+          signedIn()
+          && (
+            resource.data.ownerUid == request.auth.uid
+            ||
+            exists(
+              /databases/$(database)/documents/schools/$(schoolId)/members/$(request.auth.uid)
+            )
+          )
+        );
+
+      // Admin szkoły może edytować swoją szkołę.
+      // System Admin może np. zmieniać systemStatus.
+      allow update:
+        if isAdmin(schoolId)
+        || isSystemAdmin();
+
+      // Na razie Console NIE może usuwać szkół.
+      allow delete:
+        if isAdmin(schoolId);
+
+
+      // =======================================================
+      // MEMBERS
+      // =======================================================
+
+      match /members/{uid} {
+
+        allow read:
+          if signedIn()
+          && (
+            request.auth.uid == uid
+            || isAdmin(schoolId)
+            || isSystemAdmin()
+          );
+
+        // Admin szkoły może dodawać członków bezpośrednio.
+        // Zaproszony użytkownik może utworzyć wyłącznie
+        // własne członkostwo na podstawie ważnego zaproszenia.
+        allow create:
+          if isAdmin(schoolId)
+          || isSystemAdmin()
+          || (
+            signedIn()
+            && request.auth.uid == uid
+            && request.resource.data.uid == request.auth.uid
+            && request.resource.data.inviteId is string
+
+            && exists(
+              /databases/$(database)/documents/schoolInvites/$(request.resource.data.inviteId)
+            )
+
+            && get(
+              /databases/$(database)/documents/schoolInvites/$(request.resource.data.inviteId)
+            ).data.schoolId == schoolId
+
+            && get(
+              /databases/$(database)/documents/schoolInvites/$(request.resource.data.inviteId)
+            ).data.email == request.auth.token.email
+
+            && get(
+              /databases/$(database)/documents/schoolInvites/$(request.resource.data.inviteId)
+            ).data.role == request.resource.data.role
+          );
+
+        // Właściciel szkoły jest chroniony przed przypadkowym
+        // usunięciem/degradacją przez szkolnego admina.
+        allow update, delete:
+          if (
+            isAdmin(schoolId)
+            || isSystemAdmin()
+          )
+          && uid != schoolDoc(schoolId).data.ownerUid;
+      }
+
+
+      // =======================================================
+      // CLASSES
+      // =======================================================
+
+      match /classes/{docId} {
+        allow read:
+          if isMember(schoolId)
+          || isSystemAdmin();
+
+        allow write:
+          if isAdmin(schoolId)
+          || isSystemAdmin();
+      }
+
+
+      // =======================================================
+      // STUDENTS
+      // =======================================================
+
+      match /students/{docId} {
+        allow read:
+          if isMember(schoolId)
+          || isSystemAdmin();
+
+        allow write:
+          if isAdmin(schoolId)
+          || isSystemAdmin();
+      }
+
+
+      // =======================================================
+      // TEACHERS
+      // =======================================================
+
+      match /teachers/{docId} {
+        allow read:
+          if isMember(schoolId)
+          || isSystemAdmin();
+
+        allow write:
+          if isAdmin(schoolId)
+          || isSystemAdmin();
+      }
+
+
+      // =======================================================
+      // SUBJECTS
+      // =======================================================
+
+      match /subjects/{docId} {
+        allow read:
+          if isMember(schoolId)
+          || isSystemAdmin();
+
+        allow write:
+          if isAdmin(schoolId)
+          || isSystemAdmin();
+      }
+
+
+      // =======================================================
+      // TIMETABLE
+      // =======================================================
+
+      match /timetable/{docId} {
+        allow read:
+          if isMember(schoolId)
+          || isSystemAdmin();
+
+        allow write:
+          if isAdmin(schoolId)
+          || isSystemAdmin();
+      }
+
+
+      // =======================================================
+      // LESSON RECORDS
+      // =======================================================
+
+      match /lessonRecords/{docId} {
+        allow read:
+          if isMember(schoolId)
+          || isSystemAdmin();
+
+        allow create, update:
+          if isAdmin(schoolId)
+          || isSystemAdmin()
+          || (
+            isTeacher(schoolId)
+            && request.resource.data.teacherId is string
+            && isAssignedTeacher(
+              schoolId,
+              request.resource.data.teacherId
+            )
+          );
+
+        allow delete:
+          if isAdmin(schoolId)
+          || isSystemAdmin();
+      }
+
+
+      // =======================================================
+      // ANNOUNCEMENTS
+      // =======================================================
+
+      match /announcements/{docId} {
+        allow read:
+          if isMember(schoolId)
+          || isSystemAdmin();
+
+        allow write:
+          if isAdmin(schoolId)
+          || isSystemAdmin();
+      }
+
+
+      // =======================================================
+      // GRADES
+      // =======================================================
+
+      match /grades/{docId} {
+        allow read:
+          if isMember(schoolId)
+          || isSystemAdmin();
+
+        allow write:
+          if isAdmin(schoolId)
+          || isSystemAdmin();
+      }
+
+
+      // =======================================================
+      // TASKS
+      // =======================================================
+
+      match /tasks/{docId} {
+        allow read:
+          if isMember(schoolId)
+          || isSystemAdmin();
+
+        allow write:
+          if isAdmin(schoolId)
+          || isSystemAdmin();
+      }
+
+
+      // =======================================================
+      // ATTENDANCE
+      // =======================================================
+
+      match /attendance/{docId} {
+        allow read:
+          if isMember(schoolId)
+          || isSystemAdmin();
+
+        allow write:
+          if isAdmin(schoolId)
+          || isSystemAdmin();
+      }
+    }
+
+
+    // =========================================================
+    // SCHOOL INVITES
+    // =========================================================
+
+    match /schoolInvites/{inviteId} {
+
+      allow create:
+        if signedIn()
+        && request.resource.data.schoolId is string
+        && (
+          isAdmin(request.resource.data.schoolId)
+          || isSystemAdmin()
+        )
+        && request.resource.data.email is string
+        && request.resource.data.role in [
+          'admin',
+          'director',
+          'teacher',
+          'parent',
+          'student'
+        ];
+
+      allow read:
+        if signedIn()
+        && (
+          isSystemAdmin()
+          || isAdmin(resource.data.schoolId)
+          || resource.data.email == request.auth.token.email
+        );
+
+      allow delete:
+        if signedIn()
+        && (
+          isSystemAdmin()
+          || isAdmin(resource.data.schoolId)
+          || resource.data.email == request.auth.token.email
+        );
+
+      allow update: if false;
+    }
+
+
+    // =========================================================
+    // RELEASE REQUESTS / OTA
+    // =========================================================
+
+    match /releaseRequests/{versionId} {
+
+      // Publiczny odczyt jest celowy:
+      // GitHub Actions odczytuje kolejkę przez Firestore REST.
+      allow read: if true;
+
+      // Tylko globalny creator może zlecić publikację.
+      allow create:
+        if isSystemCreator()
+        && request.resource.data.keys().hasOnly([
+          'versionName',
+          'changelog',
+          'mandatory',
+          'source',
+          'createdAt'
+        ])
+        && request.resource.data.versionName == versionId
+        && request.resource.data.versionName.matches(
+          '^[0-9]+[.][0-9]+[.][0-9]+$'
+        )
+        && request.resource.data.changelog is string
+        && request.resource.data.changelog.size() > 0
+        && request.resource.data.changelog.size() <= 2000
+        && request.resource.data.mandatory is bool
+        && request.resource.data.source == 'console';
+
+      // Release request pozostaje jako historia.
+      allow update, delete: if false;
+    }
+
+
+    // =========================================================
+    // SYSTEM ADMINS / WOLFEDU CONSOLE
+    // =========================================================
+
+    match /systemAdmins/{uid} {
+
+      // Każdy globalny admin może odczytać listę operatorów.
+      allow read:
+        if isSystemAdmin();
+
+      // Tylko creator może nadawać lub zmieniać globalne role.
+      allow create, update:
+        if isSystemCreator()
+        && request.resource.data.role in [
+          'admin',
+          'creator'
+        ];
+
+      // Creator może usunąć innego operatora,
+      // ale nie może usunąć samego siebie.
+      allow delete:
+        if isSystemCreator()
+        && uid != request.auth.uid;
+    }
+
+
+    // =========================================================
+    // LEGACY WOLFSYNC
+    // =========================================================
+
+    match /users/{userId}/{document=**} {
+      allow read, write:
+        if signedIn()
+        && request.auth.uid == userId;
+    }
+  }
+}

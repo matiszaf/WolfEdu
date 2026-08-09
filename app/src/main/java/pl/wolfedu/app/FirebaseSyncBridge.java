@@ -41,6 +41,7 @@ public final class FirebaseSyncBridge {
     private ListenerRegistration tasksListener;
     private ListenerRegistration attendanceListener;
     private ListenerRegistration timetableListener;
+    private ListenerRegistration lessonRecordsListener;
     private ListenerRegistration membersDirectoryListener;
     private ListenerRegistration schoolInvitesListener;
     private ListenerRegistration personalInvitesListener;
@@ -58,6 +59,7 @@ public final class FirebaseSyncBridge {
     private JSONArray schoolTasks = new JSONArray();
     private JSONArray schoolAttendance = new JSONArray();
     private JSONArray schoolTimetable = new JSONArray();
+    private JSONArray schoolLessonRecords = new JSONArray();
     private JSONArray availableSchools = new JSONArray();
     private JSONArray schoolMembers = new JSONArray();
     private JSONArray schoolInvites = new JSONArray();
@@ -655,6 +657,7 @@ public final class FirebaseSyncBridge {
         schoolTasks = new JSONArray();
         schoolAttendance = new JSONArray();
         schoolTimetable = new JSONArray();
+        schoolLessonRecords = new JSONArray();
         schoolMembers = new JSONArray();
         schoolInvites = new JSONArray();
 
@@ -781,6 +784,31 @@ public final class FirebaseSyncBridge {
             schoolTimetable = array;
             emitSchoolState();
         });
+
+        lessonRecordsListener = schoolRef.collection("lessonRecords").addSnapshotListener((snapshot, error) -> {
+            if (error != null) { emitSchoolError(friendly(error.getMessage())); return; }
+            JSONArray array = new JSONArray();
+            if (snapshot != null) {
+                for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                    JSONObject o = new JSONObject();
+                    try {
+                        o.put("id", doc.getId());
+                        o.put("timetableId", value(doc.getString("timetableId")));
+                        o.put("date", value(doc.getString("date")));
+                        o.put("classId", value(doc.getString("classId")));
+                        o.put("subjectId", value(doc.getString("subjectId")));
+                        o.put("teacherId", value(doc.getString("teacherId")));
+                        o.put("teacherUid", value(doc.getString("teacherUid")));
+                        o.put("topic", value(doc.getString("topic")));
+                        Long lesson = doc.getLong("lesson");
+                        o.put("lesson", lesson == null ? 0 : lesson);
+                    } catch (Exception ignored) {}
+                    array.put(o);
+                }
+            }
+            schoolLessonRecords = array;
+            emitSchoolState();
+        });
     }
 
     private void attachPersonalInvitesListener(FirebaseUser user) {
@@ -879,6 +907,7 @@ public final class FirebaseSyncBridge {
             payload.put("tasks", schoolTasks);
             payload.put("attendance", schoolAttendance);
             payload.put("timetable", schoolTimetable);
+            payload.put("lessonRecords", schoolLessonRecords);
             payload.put("members", schoolMembers);
             payload.put("invites", schoolInvites);
             payload.put("myInvites", myInvites);
@@ -898,9 +927,9 @@ public final class FirebaseSyncBridge {
     }
 
     private void stopActiveSchoolListeners() {
-        ListenerRegistration[] regs = {schoolListener, memberListener, classesListener, subjectsListener, teachersListener, studentsListener, gradesListener, tasksListener, attendanceListener, timetableListener};
+        ListenerRegistration[] regs = {schoolListener, memberListener, classesListener, subjectsListener, teachersListener, studentsListener, gradesListener, tasksListener, attendanceListener, timetableListener, lessonRecordsListener};
         for (ListenerRegistration reg : regs) if (reg != null) reg.remove();
-        schoolListener = memberListener = classesListener = subjectsListener = teachersListener = studentsListener = gradesListener = tasksListener = attendanceListener = timetableListener = null;
+        schoolListener = memberListener = classesListener = subjectsListener = teachersListener = studentsListener = gradesListener = tasksListener = attendanceListener = timetableListener = lessonRecordsListener = null;
         stopAdminListeners();
     }
 
