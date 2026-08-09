@@ -319,6 +319,31 @@ function peopleHub(){
 function canManageSchool(){
   return ['owner','admin','director'].includes(String(wolfSchool?.role||'').toLowerCase());
 }
+
+function canTeach(){
+  const role=String(wolfSchool?.role||'').toLowerCase();
+  return ['owner','admin','director','teacher'].includes(role);
+}
+
+function currentTeacherRecord(){
+  if(String(wolfSchool?.role||'').toLowerCase()!=='teacher'){
+    return null;
+  }
+
+  const email=String(syncEmail||'').trim().toLowerCase();
+  if(!email)return null;
+
+  return (wolfSchool.teachers||[]).find(t=>
+    String(t.email||'').trim().toLowerCase()===email
+  )||null;
+}
+
+function teachingTeacherId(){
+  const teacher=currentTeacherRecord();
+  return teacher?.id||'';
+}
+
+
 function roleLabel(){
   const r=String(wolfSchool?.role||'').toLowerCase();
   return ({owner:'Właściciel',admin:'Administrator',director:'Dyrektor',teacher:'Nauczyciel',parent:'Rodzic',student:'Uczeń'})[r]||wolfSchool?.role||'Użytkownik';

@@ -400,6 +400,9 @@ function attendanceGroupedHtml(list,classes,students,subjects,teachers,cloud){
 }
 
 function cloudAttendanceForm(classes,students,subjects,teachers){
+  const teacherLocked=String(wolfSchool?.role||'').toLowerCase()==='teacher';
+  const ownTeacher=teacherLocked?currentTeacherRecord():null;
+
   return `<details class="attendance-add-card">
     <summary>
       <div>
@@ -434,12 +437,17 @@ function cloudAttendanceForm(classes,students,subjects,teachers){
         `).join('')}
       </select>
 
-      <select id="caTeacher">
+      ${teacherLocked ? `
+        <div class="sync-note">
+          <b>Nauczyciel:</b>
+          ${esc(ownTeacher?.name||syncEmail||'Niepowiązane konto')}
+        </div>
+      ` : `<select id="caTeacher">
         <option value="">Nauczyciel (opcjonalnie)</option>
         ${teachers.map(t=>`
           <option value="${esc(t.id)}">${esc(t.name||'Nauczyciel')}</option>
         `).join('')}
-      </select>
+      </select>`}
 
       <div class="attendance-form-grid">
         <input id="caDate" type="date"
@@ -556,7 +564,7 @@ function attendance(){
   const subjects=wolfSchool.subjects||[];
   const teachers=wolfSchool.teachers||[];
   const all=wolfSchool.attendance||[];
-  const can=canManageSchool();
+  const can=canTeach();
   const filtered=filterAttendance(all);
 
   app.innerHTML=`
@@ -601,6 +609,14 @@ function attendance(){
 }
 
 function addCloudAttendance(btn){
+  const teacherId=String(wolfSchool?.role||'').toLowerCase()==='teacher'
+    ? teachingTeacherId()
+    : ($('#caTeacher')?.value||'');
+
+  if(String(wolfSchool?.role||'').toLowerCase()==='teacher' && !teacherId){
+    return toast('Twoje konto nauczyciela nie jest powiązane z listą nauczycieli.');
+  }
+
   const student=$('#caStudent')?.value||'';
   const klass=$('#caClass')?.value||'';
 
@@ -615,7 +631,7 @@ function addCloudAttendance(btn){
     student,
     klass,
     $('#caSubject')?.value||'',
-    $('#caTeacher')?.value||'',
+    teacherId,
     $('#caDate')?.value||'',
     $('#caState')?.value||'Obecny',
     Number($('#caLesson')?.value||1)

@@ -306,6 +306,9 @@ function gradesListHtml(list,subjects,students,teachers,can,cloud){
 }
 
 function cloudGradeForm(students,subjects,teachers){
+  const teacherLocked=String(wolfSchool?.role||'').toLowerCase()==='teacher';
+  const ownTeacher=teacherLocked?currentTeacherRecord():null;
+
   return `<details class="grades-add-card">
     <summary>
       <div>
@@ -329,10 +332,15 @@ function cloudGradeForm(students,subjects,teachers){
         ${subjects.map(s=>`<option value="${esc(s.id)}">${esc(s.name||'Przedmiot')}</option>`).join('')}
       </select>
 
-      <select id="cgTeacher">
+      ${teacherLocked ? `
+        <div class="sync-note">
+          <b>Nauczyciel:</b>
+          ${esc(ownTeacher?.name||syncEmail||'Niepowiązane konto')}
+        </div>
+      ` : `<select id="cgTeacher">
         <option value="">Nauczyciel (opcjonalnie)</option>
         ${teachers.map(t=>`<option value="${esc(t.id)}">${esc(t.name||'Nauczyciel')}</option>`).join('')}
-      </select>
+      </select>`}
 
       <div class="grades-form-grid">
         <select id="cgValue">
@@ -448,7 +456,7 @@ function grades(){
   const subjects=wolfSchool.subjects||[];
   const teachers=wolfSchool.teachers||[];
   const list=wolfSchool.grades||[];
-  const can=canManageSchool();
+  const can=canTeach();
   const filtered=gradeFilteredList(list);
   const avg=gradeAverage(filtered);
 
@@ -475,7 +483,7 @@ function grades(){
         ? cloudGradeForm(students,subjects,teachers)
         : `<div class="grades-readonly-note">
              <b>Tryb podglądu</b>
-             <small>Dodawanie i usuwanie ocen wymaga uprawnień administracyjnych szkoły.</small>
+             <small>Dodawanie i usuwanie ocen jest dostępne dla nauczycieli i administracji.</small>
            </div>`
       }
 
@@ -489,6 +497,14 @@ function grades(){
 }
 
 function addCloudGrade(btn){
+  const teacherId=String(wolfSchool?.role||'').toLowerCase()==='teacher'
+    ? teachingTeacherId()
+    : ($('#cgTeacher')?.value||'');
+
+  if(String(wolfSchool?.role||'').toLowerCase()==='teacher' && !teacherId){
+    return toast('Twoje konto nauczyciela nie jest powiązane z listą nauczycieli.');
+  }
+
   const student=$('#cgStudent')?.value||'';
   const subject=$('#cgSubject')?.value||'';
 
@@ -502,7 +518,7 @@ function addCloudGrade(btn){
   WolfSync.addGrade(
     student,
     subject,
-    $('#cgTeacher')?.value||'',
+    teacherId,
     Number($('#cgValue')?.value||0),
     Number($('#cgWeight')?.value||1),
     $('#cgCategory')?.value?.trim()||'',

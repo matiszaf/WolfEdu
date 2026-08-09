@@ -365,6 +365,9 @@ function taskGroupedListHtml(list,classes,students,subjects,teachers,cloud){
 }
 
 function cloudTaskForm(classes,students,subjects,teachers){
+  const teacherLocked=String(wolfSchool?.role||'').toLowerCase()==='teacher';
+  const ownTeacher=teacherLocked?currentTeacherRecord():null;
+
   return `<details class="tasks-add-card">
     <summary>
       <div>
@@ -403,12 +406,17 @@ function cloudTaskForm(classes,students,subjects,teachers){
         `).join('')}
       </select>
 
-      <select id="ctTeacher">
+      ${teacherLocked ? `
+        <div class="sync-note">
+          <b>Nauczyciel:</b>
+          ${esc(ownTeacher?.name||syncEmail||'Niepowiązane konto')}
+        </div>
+      ` : `<select id="ctTeacher">
         <option value="">Nauczyciel (opcjonalnie)</option>
         ${teachers.map(t=>`
           <option value="${esc(t.id)}">${esc(t.name||'Nauczyciel')}</option>
         `).join('')}
-      </select>
+      </select>`}
 
       <div class="tasks-form-grid">
         <select id="ctType">
@@ -531,7 +539,7 @@ function tasks(){
   const subjects=wolfSchool.subjects||[];
   const teachers=wolfSchool.teachers||[];
   const all=wolfSchool.tasks||[];
-  const can=canManageSchool();
+  const can=canTeach();
   const filtered=applyTaskFilters(all);
 
   app.innerHTML=`
@@ -572,6 +580,14 @@ function tasks(){
 }
 
 function addCloudTask(btn){
+  const teacherId=String(wolfSchool?.role||'').toLowerCase()==='teacher'
+    ? teachingTeacherId()
+    : ($('#ctTeacher')?.value||'');
+
+  if(String(wolfSchool?.role||'').toLowerCase()==='teacher' && !teacherId){
+    return toast('Twoje konto nauczyciela nie jest powiązane z listą nauczycieli.');
+  }
+
   const title=$('#ctTitle')?.value?.trim()||'';
   const subject=$('#ctSubject')?.value||'';
 
@@ -586,7 +602,7 @@ function addCloudTask(btn){
     $('#ctClass')?.value||'',
     $('#ctStudent')?.value||'',
     subject,
-    $('#ctTeacher')?.value||'',
+    teacherId,
     title,
     $('#ctType')?.value||'Zadanie domowe',
     $('#ctNote')?.value?.trim()||'',

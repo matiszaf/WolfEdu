@@ -405,9 +405,47 @@ service cloud.firestore {
           if isMember(schoolId)
           || isSystemAdmin();
 
-        allow write:
+        allow create:
           if isAdmin(schoolId)
-          || isSystemAdmin();
+          || isSystemAdmin()
+          || (
+            isTeacher(schoolId)
+            && request.resource.data.teacherId is string
+            && isAssignedTeacher(
+              schoolId,
+              request.resource.data.teacherId
+            )
+            && request.resource.data.createdBy == request.auth.uid
+            && request.resource.data.updatedBy == request.auth.uid
+          );
+
+        allow update:
+          if isAdmin(schoolId)
+          || isSystemAdmin()
+          || (
+            isTeacher(schoolId)
+            && resource.data.teacherId is string
+            && request.resource.data.teacherId == resource.data.teacherId
+            && request.resource.data.createdBy == resource.data.createdBy
+            && request.resource.data.createdAt == resource.data.createdAt
+            && request.resource.data.updatedBy == request.auth.uid
+            && isAssignedTeacher(
+              schoolId,
+              resource.data.teacherId
+            )
+          );
+
+        allow delete:
+          if isAdmin(schoolId)
+          || isSystemAdmin()
+          || (
+            isTeacher(schoolId)
+            && resource.data.teacherId is string
+            && isAssignedTeacher(
+              schoolId,
+              resource.data.teacherId
+            )
+          );
       }
 
 
@@ -420,9 +458,47 @@ service cloud.firestore {
           if isMember(schoolId)
           || isSystemAdmin();
 
-        allow write:
+        allow create:
           if isAdmin(schoolId)
-          || isSystemAdmin();
+          || isSystemAdmin()
+          || (
+            isTeacher(schoolId)
+            && request.resource.data.teacherId is string
+            && isAssignedTeacher(
+              schoolId,
+              request.resource.data.teacherId
+            )
+            && request.resource.data.createdBy == request.auth.uid
+            && request.resource.data.updatedBy == request.auth.uid
+          );
+
+        allow update:
+          if isAdmin(schoolId)
+          || isSystemAdmin()
+          || (
+            isTeacher(schoolId)
+            && resource.data.teacherId is string
+            && request.resource.data.teacherId == resource.data.teacherId
+            && request.resource.data.createdBy == resource.data.createdBy
+            && request.resource.data.createdAt == resource.data.createdAt
+            && request.resource.data.updatedBy == request.auth.uid
+            && isAssignedTeacher(
+              schoolId,
+              resource.data.teacherId
+            )
+          );
+
+        allow delete:
+          if isAdmin(schoolId)
+          || isSystemAdmin()
+          || (
+            isTeacher(schoolId)
+            && resource.data.teacherId is string
+            && isAssignedTeacher(
+              schoolId,
+              resource.data.teacherId
+            )
+          );
       }
 
 
@@ -435,9 +511,47 @@ service cloud.firestore {
           if isMember(schoolId)
           || isSystemAdmin();
 
-        allow write:
+        allow create:
           if isAdmin(schoolId)
-          || isSystemAdmin();
+          || isSystemAdmin()
+          || (
+            isTeacher(schoolId)
+            && request.resource.data.teacherId is string
+            && isAssignedTeacher(
+              schoolId,
+              request.resource.data.teacherId
+            )
+            && request.resource.data.createdBy == request.auth.uid
+            && request.resource.data.updatedBy == request.auth.uid
+          );
+
+        allow update:
+          if isAdmin(schoolId)
+          || isSystemAdmin()
+          || (
+            isTeacher(schoolId)
+            && resource.data.teacherId is string
+            && request.resource.data.teacherId == resource.data.teacherId
+            && request.resource.data.createdBy == resource.data.createdBy
+            && request.resource.data.createdAt == resource.data.createdAt
+            && request.resource.data.updatedBy == request.auth.uid
+            && isAssignedTeacher(
+              schoolId,
+              resource.data.teacherId
+            )
+          );
+
+        allow delete:
+          if isAdmin(schoolId)
+          || isSystemAdmin()
+          || (
+            isTeacher(schoolId)
+            && resource.data.teacherId is string
+            && isAssignedTeacher(
+              schoolId,
+              resource.data.teacherId
+            )
+          );
       }
     }
 
