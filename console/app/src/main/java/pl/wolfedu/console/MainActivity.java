@@ -36,8 +36,7 @@ public class MainActivity extends Activity {
         if (webView != null) {
             webView.post(() ->
                 webView.evaluateJavascript(
-                    "if(typeof toast==='function'){toast('DEBUG: onResume');}"
-                    + "if(typeof refreshConsoleSelfUpdate==='function'){refreshConsoleSelfUpdate();}",
+                    "if(typeof refreshConsoleSelfUpdate==='function'){refreshConsoleSelfUpdate();}",
                     null
                 )
             );
