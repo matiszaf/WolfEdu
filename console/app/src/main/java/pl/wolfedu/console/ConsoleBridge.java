@@ -351,6 +351,65 @@ public class ConsoleBridge {
                 .addOnFailureListener(err -> emitError(friendly(err.getMessage())));
     }
 
+
+    @JavascriptInterface
+    public void requestConsoleUpdateInfo() {
+        new Thread(() -> {
+            HttpURLConnection connection = null;
+
+            try {
+                URL url = new URL(
+                    "https://raw.githubusercontent.com/matiszaf/WolfEdu-Releases/main/console-version.json?t="
+                    + System.currentTimeMillis()
+                );
+
+                connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod("GET");
+                connection.setConnectTimeout(8000);
+                connection.setReadTimeout(8000);
+                connection.setUseCaches(false);
+                connection.setRequestProperty("Cache-Control", "no-cache");
+
+                int status = connection.getResponseCode();
+
+                if (status < 200 || status >= 300) {
+                    throw new Exception("HTTP " + status);
+                }
+
+                StringBuilder body = new StringBuilder();
+
+                try (BufferedReader reader = new BufferedReader(
+                        new InputStreamReader(connection.getInputStream()))) {
+                    String line;
+
+                    while ((line = reader.readLine()) != null) {
+                        body.append(line);
+                    }
+                }
+
+                JSONObject payload = new JSONObject(body.toString());
+
+                evaluate(
+                    "window.consoleSelfUpdateInfo && window.consoleSelfUpdateInfo("
+                    + payload
+                    + ")"
+                );
+
+            } catch (Exception err) {
+                evaluate(
+                    "window.consoleSelfUpdateError && window.consoleSelfUpdateError("
+                    + js(friendly(err.getMessage()))
+                    + ")"
+                );
+            } finally {
+                if (connection != null) {
+                    connection.disconnect();
+                }
+            }
+        }).start();
+    }
+
+
     private void attachListeners() {
         stopListeners();
 
