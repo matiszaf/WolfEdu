@@ -1,15 +1,9 @@
 package pl.wolfedu.app;
 
 import android.app.Activity;
-import android.app.DownloadManager;
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
-import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
-import android.os.Environment;
 import android.provider.Settings;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
@@ -40,36 +34,18 @@ public final class UpdateBridge {
             "https://raw.githubusercontent.com/matiszaf/WolfEdu-Releases/main/version.json";
 
     private static final long CHECK_WATCHDOG_SECONDS = 12L;
-    private static final long DOWNLOAD_WATCHDOG_MINUTES = 5L;
 
     private final Activity activity;
     private final WebView webView;
     private final ExecutorService networkExecutor = Executors.newFixedThreadPool(2);
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
-    private final DownloadManager downloadManager;
     private final AtomicLong checkGeneration = new AtomicLong(0L);
 
-    private long pendingDownloadId = -1L;
     private File pendingApkFile;
-    private ScheduledFuture<?> downloadTimeoutFuture;
-    private boolean receiverRegistered = false;
-
-    private final BroadcastReceiver downloadReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if (!DownloadManager.ACTION_DOWNLOAD_COMPLETE.equals(intent.getAction())) return;
-            long id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1L);
-            if (id != pendingDownloadId) return;
-            cancelDownloadTimeout();
-            handleDownloadFinished(id);
-        }
-    };
 
     public UpdateBridge(Activity activity, WebView webView) {
         this.activity = activity;
         this.webView = webView;
-        this.downloadManager = (DownloadManager) activity.getSystemService(Context.DOWNLOAD_SERVICE);
-        registerReceiver();
     }
 
     @JavascriptInterface
@@ -287,82 +263,8 @@ public final class UpdateBridge {
 
     public void destroy() {
         checkGeneration.incrementAndGet();
-        cancelDownloadTimeout();
-
-        try {
-            if (receiverRegistered) activity.unregisterReceiver(downloadReceiver);
-        } catch (Exception ignored) {}
-        receiverRegistered = false;
-
         networkExecutor.shutdownNow();
         scheduler.shutdownNow();
-    }
-
-    private void registerReceiver() {
-        if (receiverRegistered) return;
-        IntentFilter filter = new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
-        if (Build.VERSION.SDK_INT >= 33) {
-            activity.registerReceiver(downloadReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
-        } else {
-            activity.registerReceiver(downloadReceiver, filter);
-        }
-        receiverRegistered = true;
-    }
-
-    private void handleDownloadTimeout(long id) {
-        if (id <= 0L || id != pendingDownloadId) return;
-
-        int status = queryDownloadStatus(id);
-        if (status == DownloadManager.STATUS_SUCCESSFUL) {
-            handleDownloadFinished(id);
-            return;
-        }
-
-        try { downloadManager.remove(id); } catch (Exception ignored) {}
-        if (id == pendingDownloadId) pendingDownloadId = -1L;
-        emitDownload("error", "Pobieranie aktualizacji przekroczyło limit 5 minut.");
-    }
-
-    private int queryDownloadStatus(long id) {
-        DownloadManager.Query query = new DownloadManager.Query().setFilterById(id);
-        try (Cursor cursor = downloadManager.query(query)) {
-            if (cursor != null && cursor.moveToFirst()) {
-                int index = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS);
-                if (index >= 0) return cursor.getInt(index);
-            }
-        } catch (Exception ignored) {}
-        return DownloadManager.STATUS_FAILED;
-    }
-
-    private void handleDownloadFinished(long id) {
-        if (id <= 0L || id != pendingDownloadId) return;
-
-        DownloadManager.Query query = new DownloadManager.Query().setFilterById(id);
-        try (Cursor cursor = downloadManager.query(query)) {
-            if (cursor == null || !cursor.moveToFirst()) {
-                pendingDownloadId = -1L;
-                emitDownload("error", "Nie znaleziono pobranej aktualizacji.");
-                return;
-            }
-
-            int statusIndex = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS);
-            int reasonIndex = cursor.getColumnIndex(DownloadManager.COLUMN_REASON);
-            int status = statusIndex >= 0
-                    ? cursor.getInt(statusIndex)
-                    : DownloadManager.STATUS_FAILED;
-
-            if (status == DownloadManager.STATUS_SUCCESSFUL) {
-                emitDownload("downloaded", "Aktualizacja pobrana.");
-                requestInstallPermissionOrInstall(id);
-            } else {
-                int reason = reasonIndex >= 0 ? cursor.getInt(reasonIndex) : -1;
-                pendingDownloadId = -1L;
-                emitDownload("error", "Pobieranie nie powiodło się (kod " + reason + ").");
-            }
-        } catch (Exception e) {
-            pendingDownloadId = -1L;
-            emitDownload("error", friendly(e));
-        }
     }
 
     private void requestInstallPermissionOrInstall(File apk) {
@@ -423,61 +325,6 @@ public final class UpdateBridge {
         }
     }
 
-
-    private void requestInstallPermissionOrInstall(long id) {
-        if (canInstallPackages()) {
-            installDownloadedApk(id);
-            return;
-        }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            emitDownload(
-                    "permission",
-                    "Zezwól WolfEdu na instalowanie aplikacji, a potem wróć do WolfEdu."
-            );
-            Intent settings = new Intent(
-                    Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
-                    Uri.parse("package:" + activity.getPackageName())
-            );
-            activity.startActivity(settings);
-        } else {
-            installDownloadedApk(id);
-        }
-    }
-
-    private boolean canInstallPackages() {
-        return Build.VERSION.SDK_INT < Build.VERSION_CODES.O
-                || activity.getPackageManager().canRequestPackageInstalls();
-    }
-
-    private void installDownloadedApk(long id) {
-        if (id <= 0L || id != pendingDownloadId) return;
-
-        Uri uri = downloadManager.getUriForDownloadedFile(id);
-        if (uri == null) {
-            pendingDownloadId = -1L;
-            emitDownload("error", "Nie można otworzyć pobranego APK.");
-            return;
-        }
-
-        try {
-            Intent install = new Intent(Intent.ACTION_VIEW);
-            install.setDataAndType(uri, "application/vnd.android.package-archive");
-            install.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            activity.startActivity(install);
-            emitDownload("installing", "Otwieram instalator Androida…");
-            pendingDownloadId = -1L;
-        } catch (Exception e) {
-            emitDownload("error", friendly(e));
-        }
-    }
-
-    private void cancelDownloadTimeout() {
-        if (downloadTimeoutFuture != null) {
-            downloadTimeoutFuture.cancel(false);
-            downloadTimeoutFuture = null;
-        }
-    }
 
     private void emitCheckError(String message, String currentName, long currentCode) {
         JSONObject result = new JSONObject();
