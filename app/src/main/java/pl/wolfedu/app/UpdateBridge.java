@@ -14,10 +14,15 @@ import android.provider.Settings;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 
+import androidx.core.content.FileProvider;
+
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.io.InputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -45,6 +50,7 @@ public final class UpdateBridge {
     private final AtomicLong checkGeneration = new AtomicLong(0L);
 
     private long pendingDownloadId = -1L;
+    private File pendingApkFile;
     private ScheduledFuture<?> downloadTimeoutFuture;
     private boolean receiverRegistered = false;
 
@@ -174,62 +180,109 @@ public final class UpdateBridge {
 
     @JavascriptInterface
     public void downloadAndInstall(String apkUrl) {
-        activity.runOnUiThread(() -> {
+        if (apkUrl == null
+                || apkUrl.isBlank()
+                || !apkUrl.startsWith(
+                    "https://github.com/matiszaf/WolfEdu-Releases/")) {
+
+            emitDownload("error", "Nieprawidłowy adres APK.");
+            return;
+        }
+
+        emitDownload("downloading", "Pobieranie aktualizacji…");
+
+        networkExecutor.execute(() -> {
+            HttpURLConnection connection = null;
+
             try {
-                if (apkUrl == null || apkUrl.isBlank() || !apkUrl.startsWith("https://")) {
-                    emitDownload("error", "Nieprawidłowy adres APK.");
-                    return;
+                URL url = new URL(apkUrl);
+
+                connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod("GET");
+                connection.setConnectTimeout(15000);
+                connection.setReadTimeout(30000);
+                connection.setInstanceFollowRedirects(true);
+                connection.setUseCaches(false);
+
+                int status = connection.getResponseCode();
+
+                if (status < 200 || status >= 300) {
+                    throw new IllegalStateException(
+                            "Serwer APK zwrócił HTTP " + status
+                    );
                 }
 
-                if (pendingDownloadId > 0L) {
-                    try { downloadManager.remove(pendingDownloadId); } catch (Exception ignored) {}
-                    pendingDownloadId = -1L;
+                File updateDir = new File(
+                        activity.getCacheDir(),
+                        "updates"
+                );
+
+                if (!updateDir.exists() && !updateDir.mkdirs()) {
+                    throw new IllegalStateException(
+                            "Nie udało się utworzyć katalogu aktualizacji."
+                    );
                 }
-                cancelDownloadTimeout();
 
-                DownloadManager.Request request = new DownloadManager.Request(Uri.parse(apkUrl));
-                request.setTitle("WolfEdu — aktualizacja");
-                request.setDescription("Pobieranie aktualizacji WolfEdu");
-                request.setMimeType("application/vnd.android.package-archive");
-                request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
-                request.setAllowedOverMetered(true);
-                request.setAllowedOverRoaming(false);
-                request.setDestinationInExternalFilesDir(
-                        activity,
-                        Environment.DIRECTORY_DOWNLOADS,
-                        "WolfEdu-update-" + System.currentTimeMillis() + ".apk"
+                File apk = new File(
+                        updateDir,
+                        "WolfEdu-update.apk"
                 );
 
-                pendingDownloadId = downloadManager.enqueue(request);
-                final long downloadId = pendingDownloadId;
+                try (
+                    InputStream input = connection.getInputStream();
+                    FileOutputStream output = new FileOutputStream(apk)
+                ) {
+                    byte[] buffer = new byte[8192];
+                    int read;
 
-                downloadTimeoutFuture = scheduler.schedule(
-                        () -> handleDownloadTimeout(downloadId),
-                        DOWNLOAD_WATCHDOG_MINUTES,
-                        TimeUnit.MINUTES
+                    while ((read = input.read(buffer)) != -1) {
+                        output.write(buffer, 0, read);
+                    }
+
+                    output.flush();
+                }
+
+                if (!apk.exists() || apk.length() == 0L) {
+                    throw new IllegalStateException(
+                            "Pobrany plik APK jest pusty."
+                    );
+                }
+
+                pendingApkFile = apk;
+
+                emitDownload(
+                        "downloaded",
+                        "Aktualizacja pobrana. Otwieram instalator…"
                 );
 
-                emitDownload("downloading", "Pobieranie aktualizacji…");
+                activity.runOnUiThread(
+                        () -> requestInstallPermissionOrInstall(apk)
+                );
+
             } catch (Exception e) {
+                pendingApkFile = null;
                 emitDownload("error", friendly(e));
+            } finally {
+                if (connection != null) {
+                    try {
+                        connection.disconnect();
+                    } catch (Exception ignored) {}
+                }
             }
         });
     }
 
     public void onResume() {
-        long id = pendingDownloadId;
-        if (id <= 0L || !canInstallPackages()) return;
+        File apk = pendingApkFile;
 
-        DownloadManager.Query query = new DownloadManager.Query().setFilterById(id);
-        try (Cursor cursor = downloadManager.query(query)) {
-            if (cursor != null && cursor.moveToFirst()) {
-                int index = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS);
-                if (index >= 0 && cursor.getInt(index) == DownloadManager.STATUS_SUCCESSFUL) {
-                    cancelDownloadTimeout();
-                    installDownloadedApk(id);
-                }
-            }
-        } catch (Exception ignored) {}
+        if (apk == null
+                || !apk.exists()
+                || apk.length() == 0L
+                || !canInstallPackages()) {
+            return;
+        }
+
+        installCachedApk(apk);
     }
 
     public void destroy() {
@@ -311,6 +364,65 @@ public final class UpdateBridge {
             emitDownload("error", friendly(e));
         }
     }
+
+    private void requestInstallPermissionOrInstall(File apk) {
+        if (apk == null || !apk.exists() || apk.length() == 0L) {
+            pendingApkFile = null;
+            emitDownload("error", "Nie znaleziono pobranego APK.");
+            return;
+        }
+
+        if (canInstallPackages()) {
+            installCachedApk(apk);
+            return;
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            emitDownload(
+                    "permission",
+                    "Zezwól WolfEdu na instalowanie aplikacji, a potem wróć do WolfEdu."
+            );
+
+            Intent settings = new Intent(
+                    Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                    Uri.parse("package:" + activity.getPackageName())
+            );
+
+            activity.startActivity(settings);
+        } else {
+            installCachedApk(apk);
+        }
+    }
+
+    private void installCachedApk(File apk) {
+        try {
+            Uri uri = FileProvider.getUriForFile(
+                    activity,
+                    activity.getPackageName() + ".fileprovider",
+                    apk
+            );
+
+            Intent install = new Intent(Intent.ACTION_VIEW);
+            install.setDataAndType(
+                    uri,
+                    "application/vnd.android.package-archive"
+            );
+            install.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+            activity.startActivity(install);
+
+            emitDownload(
+                    "installing",
+                    "Otwieram instalator Androida…"
+            );
+
+            pendingApkFile = null;
+
+        } catch (Exception e) {
+            emitDownload("error", friendly(e));
+        }
+    }
+
 
     private void requestInstallPermissionOrInstall(long id) {
         if (canInstallPackages()) {
