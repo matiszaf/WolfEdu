@@ -17,6 +17,90 @@ function planSelectedDay(){
 function setPlanDay(day){wolfPlanDay=Number(day);plan()}
 function planSubject(l){return wolfSchool.subjects.find(x=>x.id===l.subjectId)?.name||'Przedmiot'}
 function planTeacher(l){return wolfSchool.teachers.find(x=>x.id===l.teacherId)?.name||''}
+
+function planDateKey(date=new Date()){
+  const y=date.getFullYear();
+  const m=String(date.getMonth()+1).padStart(2,'0');
+  const d=String(date.getDate()).padStart(2,'0');
+  return `${y}-${m}-${d}`;
+}
+
+function planCurrentTeacher(){
+  if(String(wolfSchool?.role||'').toLowerCase()!=='teacher')return null;
+  const email=String(syncEmail||'').trim().toLowerCase();
+  if(!email)return null;
+  return (wolfSchool.teachers||[]).find(t=>
+    String(t.email||'').trim().toLowerCase()===email
+  )||null;
+}
+
+function planLessonRecord(lesson,date=planDateKey()){
+  if(!lesson?.id)return null;
+  return (wolfSchool.lessonRecords||[]).find(r=>
+    r.timetableId===lesson.id && r.date===date
+  )||null;
+}
+
+function canRecordLessonTopic(lesson,day){
+  if(Number(day)!==planToday())return false;
+  const teacher=planCurrentTeacher();
+  return !!teacher && teacher.id===lesson?.teacherId;
+}
+function planMissingTopicLessons(){
+  const teacher=planCurrentTeacher();
+  const today=planToday();
+
+  if(!teacher||!today)return [];
+
+  return (wolfSchool.timetable||[])
+    .filter(l=>
+      Number(l.day)===Number(today) &&
+      l.teacherId===teacher.id &&
+      planLessonState(l,today)==='past' &&
+      !String(planLessonRecord(l)?.topic||'').trim()
+    )
+    .sort((a,b)=>{
+      const am=planMinutes(a.start);
+      const bm=planMinutes(b.start);
+
+      if(am!==null&&bm!==null&&am!==bm)return am-bm;
+      return Number(a.lesson||99)-Number(b.lesson||99);
+    });
+}
+
+function planMissingTopicsHtml(){
+  const missing=planMissingTopicLessons();
+
+  if(!missing.length)return '';
+
+  return `<section class="plan-topic-alert">
+    <div class="plan-topic-alert-head">
+      <div>
+        <small>WYMAGANE UZUPEŁNIENIE</small>
+        <b>${missing.length===1
+          ? '1 lekcja bez tematu'
+          : `${missing.length} lekcje bez tematu`}</b>
+      </div>
+      <span>${missing.length}</span>
+    </div>
+
+    <div class="plan-topic-alert-list">
+      ${missing.map(l=>`
+        <button onclick="openLessonTopicEditor('${esc(l.id)}')">
+          <div>
+            <b>${esc(planSubject(l))}</b>
+            <small>
+              ${esc(l.start||('Lekcja '+(l.lesson||'')))}
+              ${l.room?' · sala '+esc(l.room):''}
+            </small>
+          </div>
+          <strong>Uzupełnij</strong>
+        </button>
+      `).join('')}
+    </div>
+  </section>`;
+}
+
 function planClassLessons(classId,day){
   return (wolfSchool.timetable||[])
     .filter(l=>l.classId===classId&&Number(l.day)===Number(day))
@@ -92,16 +176,51 @@ function planLessonCard(l,day,selected){
     teacher,
     l.room?'sala '+l.room:''
   ].filter(Boolean).join(' · ');
-  return `<div class="plan-lesson ${state}" ${canManageSchool()?`onclick="openMobileLessonEditor('${esc(l.id)}','${esc(selected)}',${Number(l.day)},${Number(l.lesson)})"`:''}>
-    <div class="plan-time"><b>${esc(l.start||('#'+l.lesson))}</b><small>${esc(l.end||'')}</small></div>
-    <div class="plan-line"><span></span></div>
-    <div class="plan-copy"><div class="plan-title-row"><b>${esc(planSubject(l))}</b>
-      ${state==='current'?'<em>TERAZ</em>':''}</div>
-      <small>${esc(meta||'Brak sali i nauczyciela')}</small>
+
+  const today=Number(day)===Number(planToday());
+  const record=today?planLessonRecord(l):null;
+  const canTopic=canRecordLessonTopic(l,day);
+
+  const click=canTopic
+    ? `onclick="openLessonTopicEditor('${esc(l.id)}')"`
+    : canManageSchool()
+      ? `onclick="openMobileLessonEditor('${esc(l.id)}','${esc(selected)}',${Number(l.day)},${Number(l.lesson)})"`
+      : '';
+
+  const topicHtml=record?.topic
+    ? `<div class="plan-topic">
+         <small>TEMAT LEKCJI</small>
+         <b>${esc(record.topic)}</b>
+       </div>`
+    : canTopic
+      ? `<div class="plan-topic missing">
+           <small>TEMAT LEKCJI</small>
+           <b>Uzupełnij temat lekcji</b>
+         </div>`
+      : '';
+
+  return `<div class="plan-lesson ${state}" ${click}>
+    <div class="plan-time">
+      <b>${esc(l.start||('#'+l.lesson))}</b>
+      <small>${esc(l.end||'')}</small>
     </div>
+
+    <div class="plan-line"><span></span></div>
+
+    <div class="plan-copy">
+      <div class="plan-title-row">
+        <b>${esc(planSubject(l))}</b>
+        ${state==='current'?'<em>TERAZ</em>':''}
+      </div>
+
+      <small>${esc(meta||'Brak sali i nauczyciela')}</small>
+      ${topicHtml}
+    </div>
+
     <div class="plan-lesson-no">${esc(l.lesson||'')}</div>
   </div>`;
 }
+
 function planWeekOverview(classId){
   return `<details class="plan-week">
     <summary><div><b>Cały tydzień</b><small>Szybki podgląd liczby lekcji</small></div><span>Rozwiń</span></summary>
@@ -135,6 +254,7 @@ function plan(){
 
     app.innerHTML=`<section class="plan-page">
       ${planHero(selected)}
+      ${planMissingTopicsHtml()}
       <section class="plan-toolbar">
         <div><small>Plan klasy</small><select id="cloudPlanClass" onchange="changeCloudPlanClass(this.value)">${classOptions}</select></div>
         <span class="plan-role">${esc(wolfSchool.role||'użytkownik')}</span>
@@ -166,6 +286,100 @@ function plan(){
 function changeCloudPlanClass(v){localStorage.setItem('wolfEduPlanClass',v);wolfPlanDay=null;plan()}
 function addLesson(){let day=$('#pDay').value,time=$('#pTime').value,subject=$('#pSubject').value.trim(),room=$('#pRoom').value.trim();if(!time||!subject)return toast('Uzupełnij godzinę i przedmiot');db.lessons.push({id:id(),day,time,subject,room});save();plan()}
 function delLesson(i){db.lessons=db.lessons.filter(l=>l.id!==i);save();plan()}
+
+function openLessonTopicEditor(timetableId){
+  const lesson=(wolfSchool.timetable||[]).find(
+    l=>l.id===timetableId
+  );
+
+  if(!lesson){
+    toast('Nie znaleziono lekcji.');
+    return;
+  }
+
+  if(!canRecordLessonTopic(lesson,lesson.day)){
+    toast('Możesz uzupełnić temat tylko swojej dzisiejszej lekcji.');
+    return;
+  }
+
+  const record=planLessonRecord(lesson);
+
+  app.innerHTML=`
+    <section class="plan-page">
+      <div class="plan-editor">
+
+        <div class="plan-editor-head">
+          <div>
+            <small>REALIZACJA LEKCJI</small>
+            <h2>Temat lekcji</h2>
+          </div>
+
+          <button class="secondary mini" onclick="plan()">
+            Wróć
+          </button>
+        </div>
+
+        <div class="sync-note">
+          <b>${esc(planSubject(lesson))}</b><br>
+          ${esc(planDateKey())}
+          · lekcja ${esc(lesson.lesson||'')}
+          ${lesson.room?' · sala '+esc(lesson.room):''}
+        </div>
+
+        <textarea
+          id="lessonTopic"
+          maxlength="500"
+          placeholder="Wpisz przerabiany temat lekcji..."
+        >${esc(record?.topic||'')}</textarea>
+
+        <button
+          class="btn-full"
+          onclick="saveLessonTopic('${esc(record?.id||'')}','${esc(lesson.id)}')">
+          ${record?'Zapisz zmiany':'Zapisz temat lekcji'}
+        </button>
+
+        <div class="sync-note">
+          Temat jest wymagany dla prowadzącego nauczyciela.
+        </div>
+      </div>
+    </section>`;
+}
+
+function saveLessonTopic(recordId,timetableId){
+  const lesson=(wolfSchool.timetable||[]).find(
+    l=>l.id===timetableId
+  );
+
+  if(!lesson){
+    toast('Nie znaleziono lekcji.');
+    return;
+  }
+
+  if(!canRecordLessonTopic(lesson,lesson.day)){
+    toast('Brak uprawnień do tej lekcji.');
+    return;
+  }
+
+  const topic=$('#lessonTopic')?.value.trim()||'';
+
+  if(!topic){
+    toast('Wpisz temat lekcji.');
+    return;
+  }
+
+  WolfSync.saveLessonRecord(
+    recordId||'',
+    lesson.id,
+    planDateKey(),
+    lesson.classId,
+    lesson.subjectId,
+    lesson.teacherId,
+    Number(lesson.lesson||0),
+    topic
+  );
+
+  toast('Zapisuję temat lekcji…');
+}
 
 function openMobileLessonEditor(id,classId,day,lesson){
   if(!canManageSchool())return;

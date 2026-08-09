@@ -324,6 +324,52 @@ public final class FirebaseSyncBridge {
     }
 
     @JavascriptInterface
+    public void saveLessonRecord(String id, String timetableId, String date, String classId,
+                                 String subjectId, String teacherId, int lesson, String topic) {
+        FirebaseUser user = auth.getCurrentUser();
+
+        if (user == null || !hasActiveSchool()) return;
+        if (timetableId == null || timetableId.isBlank()) return;
+        if (date == null || date.isBlank()) return;
+        if (classId == null || classId.isBlank()) return;
+        if (subjectId == null || subjectId.isBlank()) return;
+        if (teacherId == null || teacherId.isBlank()) return;
+        if (topic == null || topic.trim().isEmpty()) return;
+
+        String cleanTopic = topic.trim();
+        if (cleanTopic.length() > 500) cleanTopic = cleanTopic.substring(0, 500);
+
+        Map<String, Object> payload = auditPayload(user);
+        payload.put("timetableId", timetableId);
+        payload.put("date", date);
+        payload.put("classId", classId);
+        payload.put("subjectId", subjectId);
+        payload.put("teacherId", teacherId);
+        payload.put("teacherUid", user.getUid());
+        payload.put("lesson", lesson);
+        payload.put("topic", cleanTopic);
+
+        if (id == null || id.isBlank()) {
+            payload.put("createdAt", FieldValue.serverTimestamp());
+            payload.put("createdBy", user.getUid());
+
+            firestore.collection("schools")
+                    .document(activeSchoolId)
+                    .collection("lessonRecords")
+                    .add(payload)
+                    .addOnFailureListener(error -> emitSchoolError(friendly(error.getMessage())));
+        } else {
+            firestore.collection("schools")
+                    .document(activeSchoolId)
+                    .collection("lessonRecords")
+                    .document(id)
+                    .set(payload, SetOptions.merge())
+                    .addOnFailureListener(error -> emitSchoolError(friendly(error.getMessage())));
+        }
+    }
+
+    @JavascriptInterface
+
     public void deleteCloudLesson(String id) {
         if (!hasActiveSchool() || id == null || id.isBlank()) return;
         firestore.collection("schools").document(activeSchoolId).collection("timetable").document(id).delete()
