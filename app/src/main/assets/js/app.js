@@ -192,7 +192,7 @@ function roleNavPages(){
   }
 
   if(group==='staff'){
-    return ['home','schoolHub','peopleHub','settings'];
+    return ['home','learning','schoolHub','peopleHub','settings'];
   }
 
   if(group==='learner'){
