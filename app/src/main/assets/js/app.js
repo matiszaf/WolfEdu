@@ -144,6 +144,7 @@ function render(p=page){
   if(!db.school&&!wolfSchool.schoolName)return setup();
 
   $('#nav').classList.remove('hidden');
+  updateRoleNavigation();
 
   document.querySelectorAll('nav button').forEach(
     b=>b.classList.toggle('active',b.dataset.page===page)
@@ -151,6 +152,9 @@ function render(p=page){
 
   ({
     home,
+    learning,
+    schoolHub,
+    peopleHub,
     classes,
     studentsPage,
     teachersPage,
@@ -165,6 +169,151 @@ function render(p=page){
     settings
   }[page]||home)();
 }
+
+function currentWolfRole(){
+  return String(wolfSchool?.role||'').toLowerCase();
+}
+
+function wolfRoleGroup(){
+  const role=currentWolfRole();
+
+  if(['owner','admin'].includes(role))return 'admin';
+  if(['teacher','director'].includes(role))return 'staff';
+  if(['student','parent'].includes(role))return 'learner';
+
+  return 'guest';
+}
+
+function roleNavPages(){
+  const group=wolfRoleGroup();
+
+  if(group==='admin'){
+    return ['home','learning','schoolHub','peopleHub','settings'];
+  }
+
+  if(group==='staff'){
+    return ['home','schoolHub','peopleHub','settings'];
+  }
+
+  if(group==='learner'){
+    return ['home','learning','schoolHub','settings'];
+  }
+
+  return ['home','settings'];
+}
+
+function updateRoleNavigation(){
+  const allowed=new Set(roleNavPages());
+
+  document.querySelectorAll('#nav button[data-page]').forEach(btn=>{
+    btn.style.display=allowed.has(btn.dataset.page)?'':'none';
+  });
+}
+
+function learning(){
+  setHead('Nauka','Moduły edukacyjne');
+
+  app.innerHTML=`
+    <section class="card">
+      <h2>Nauka</h2>
+
+      <div class="hub-grid">
+        <button class="hub-tile" onclick="render('grades')">
+          <span class="hub-icon">★</span>
+          <b>Oceny</b>
+          <small>Oceny i podsumowania</small>
+        </button>
+
+        <button class="hub-tile" onclick="render('tasks')">
+          <span class="hub-icon">✓</span>
+          <b>Zadania</b>
+          <small>Zadania i terminy</small>
+        </button>
+
+        <button class="hub-tile" onclick="render('attendance')">
+          <span class="hub-icon">◷</span>
+          <b>Frekwencja</b>
+          <small>Obecności i nieobecności</small>
+        </button>
+
+        <button class="hub-tile" onclick="render('plan')">
+          <span class="hub-icon">▦</span>
+          <b>Plan lekcji</b>
+          <small>Plan i godziny zajęć</small>
+        </button>
+      </div>
+    </section>`;
+}
+
+function schoolHub(){
+  setHead('Szkoła',wolfSchool.schoolName||'WolfEdu');
+
+  const group=wolfRoleGroup();
+  const staffLike=['staff','admin'].includes(group);
+
+  app.innerHTML=`
+    <section class="card">
+      <h2>Szkoła</h2>
+
+      <div class="hub-grid">
+        <button class="hub-tile" onclick="render('schoolPage')">
+          <span class="hub-icon">🏫</span>
+          <b>Informacje o szkole</b>
+          <small>Dane szkoły</small>
+        </button>
+
+        ${staffLike ? `
+        <button class="hub-tile" onclick="render('classes')">
+          <span class="hub-icon">▦</span>
+          <b>Klasy</b>
+          <small>Klasy szkolne</small>
+        </button>
+        ` : ''}
+
+        <button class="hub-tile" onclick="render('subjectsPage')">
+          <span class="hub-icon">▤</span>
+          <b>Przedmioty</b>
+          <small>Przedmioty szkolne</small>
+        </button>
+      </div>
+    </section>`;
+}
+
+function peopleHub(){
+  setHead('Ludzie',wolfSchool.schoolName||'WolfEdu');
+
+  const role=String(wolfSchool?.role||'').toLowerCase();
+  const adminLike=['owner','admin'].includes(role);
+
+  app.innerHTML=`
+    <section class="card">
+      <h2>Ludzie</h2>
+
+      <div class="hub-grid">
+        <button class="hub-tile" onclick="render('studentsPage')">
+          <span class="hub-icon">♟</span>
+          <b>Uczniowie</b>
+          <small>Uczniowie szkoły</small>
+        </button>
+
+        <button class="hub-tile" onclick="render('teachersPage')">
+          <span class="hub-icon">♙</span>
+          <b>Nauczyciele</b>
+          <small>Informacje o nauczycielach</small>
+        </button>
+
+        ${adminLike ? `
+          <button class="hub-tile" onclick="render('usersRolesPage')">
+            <span class="hub-icon">⚙</span>
+            <b>Użytkownicy i role</b>
+            <small>Konta i uprawnienia</small>
+          </button>
+        ` : ''}
+      </div>
+    </section>`;
+}
+
+
 
 
 function canManageSchool(){

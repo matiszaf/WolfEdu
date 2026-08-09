@@ -15,3 +15,43 @@ nav button{background:transparent;color:var(--muted);border-radius:20px;padding:
 .toast{position:fixed;left:50%;bottom:92px;transform:translateX(-50%) translateY(12px);background:#303036;color:white;padding:11px 16px;border-radius:14px;z-index:30;opacity:0;transition:.2s;pointer-events:none;max-width:90%;text-align:center}.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .splash{position:fixed;inset:0;z-index:999;background:var(--surface);display:grid;place-items:center;transition:opacity .35s,visibility .35s}.splash.hide{opacity:0;visibility:hidden}.splash-logo{width:88px;height:88px;border-radius:28px;background:var(--primary-container);color:var(--on-primary-container);display:grid;place-items:center;font-size:42px;font-weight:800}.splash h1{font-size:32px;margin:16px 0 4px}.splash p{margin:0;color:var(--muted)}.setup{min-height:68vh;display:grid;place-items:center}.setup .card{width:100%;max-width:480px}.switch{display:flex;justify-content:space-between;align-items:center;gap:12px}.version{text-align:center;color:var(--muted);font-size:12px;padding:10px}.task-type,.task-date{font-weight:700}.task-type{font-size:11px;background:var(--secondary-container);padding:5px 8px;border-radius:999px}.task-overdue{border-left:4px solid var(--danger);padding-left:12px}.task-done{opacity:.6}.task-done b{text-decoration:line-through}@keyframes pulse{50%{opacity:.35}}
 @media(max-width:390px){main{padding-left:12px;padding-right:12px}.quick{gap:9px}.grid{grid-template-columns:1fr}.sync-actions{grid-template-columns:1fr}}
+
+.hub-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+  margin-top:14px;
+}
+
+.hub-tile{
+  min-height:132px;
+  padding:18px;
+  border-radius:22px;
+  text-align:left;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  justify-content:flex-start;
+  gap:6px;
+}
+
+.hub-tile .hub-icon{
+  font-size:28px;
+  line-height:1;
+  margin-bottom:6px;
+}
+
+.hub-tile b{
+  font-size:18px;
+}
+
+.hub-tile small{
+  opacity:.75;
+  line-height:1.35;
+}
+
+@media(max-width:380px){
+  .hub-grid{
+    grid-template-columns:1fr;
+  }
+}
