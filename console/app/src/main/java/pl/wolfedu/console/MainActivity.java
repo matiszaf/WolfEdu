@@ -30,6 +30,20 @@ public class MainActivity extends Activity {
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+
+        if (webView != null) {
+            webView.post(() ->
+                webView.evaluateJavascript(
+                    "if(typeof refreshConsoleSelfUpdate==='function'){refreshConsoleSelfUpdate();}",
+                    null
+                )
+            );
+        }
+    }
+
+    @Override
     public void onBackPressed() {
         if (webView != null && webView.canGoBack()) webView.goBack();
         else super.onBackPressed();
