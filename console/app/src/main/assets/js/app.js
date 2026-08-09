@@ -85,6 +85,7 @@ window.consoleAuth=(ok,e,role)=>{
   $('#headerAvatar').textContent=(email||'W').charAt(0).toUpperCase();
 
   try{WolfConsole.requestEnvironment()}catch(e){}
+  try{refreshConsoleSelfUpdate()}catch(e){}
   render(currentPage);
 };
 
@@ -113,6 +114,49 @@ window.consoleEnvironment=x=>{
 
   if(authenticated)render(currentPage);
 };
+
+
+let consoleSelfUpdateInfo=null;
+let consoleSelfUpdateError='';
+
+window.consoleSelfUpdateInfo=x=>{
+  consoleSelfUpdateInfo=x||null;
+  consoleSelfUpdateError='';
+
+  if(authenticated){
+    render(currentPage);
+  }
+};
+
+window.consoleSelfUpdateError=message=>{
+  consoleSelfUpdateError=String(message||'Nie udało się sprawdzić aktualizacji Console.');
+
+  if(authenticated){
+    render(currentPage);
+  }
+};
+
+function consoleSelfUpdateAvailable(){
+  const current=parseVersion(environment?.consoleVersion);
+  const latest=parseVersion(consoleSelfUpdateInfo?.versionName);
+
+  if(!current || !latest){
+    return false;
+  }
+
+  return compareVersions(
+    consoleSelfUpdateInfo.versionName,
+    environment.consoleVersion
+  )>0;
+}
+
+function refreshConsoleSelfUpdate(){
+  try{
+    WolfConsole.requestConsoleUpdateInfo();
+  }catch(e){
+    consoleSelfUpdateError='Nie udało się uruchomić sprawdzania aktualizacji Console.';
+  }
+}
 
 window.consoleReleaseInfo=x=>{
   releaseInfo=x||null;
@@ -1154,6 +1198,17 @@ function diagnosticsView(){
     <section class="detail-grid">
       ${detailCard('Console',environment.consoleVersion||'—')}
       ${detailCard('Version code',environment.consoleVersionCode||0)}
+      ${detailCard('Najnowsza Console',consoleSelfUpdateInfo?.versionName||'—')}
+      ${detailCard(
+        'Status OTA',
+        consoleSelfUpdateError
+          ? 'BŁĄD'
+          : !consoleSelfUpdateInfo
+            ? 'SPRAWDZANIE…'
+            : consoleSelfUpdateAvailable()
+              ? 'DOSTĘPNA'
+              : 'AKTUALNA'
+      )}
       ${detailCard('Firestore DB',environment.firestoreDatabase||'default')}
       ${detailCard('Rola',systemRole||'—')}
       ${detailCard('UID',currentUid||'—')}
@@ -1171,6 +1226,11 @@ function diagnosticsView(){
       <button class="secondary full top-gap"
         onclick="WolfConsole.requestState();WolfConsole.requestEnvironment();toast('Odświeżam sesję…')">
         Odśwież stan Console
+      </button>
+
+      <button class="secondary full top-gap"
+        onclick="refreshConsoleSelfUpdate();toast('Sprawdzam aktualizację Console…')">
+        Sprawdź aktualizację Console
       </button>
 
       <button class="secondary full top-gap"
