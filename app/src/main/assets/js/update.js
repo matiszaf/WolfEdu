@@ -177,7 +177,12 @@ window.wolfOtaCheckResult=function(result){
   s.mandatory=!!result.mandatory;
   s.phase=s.available?'available':'upToDate';
 
-  refreshUpdateCard();
+  if(s.available && s.mandatory){
+    render(currentPage||'home');
+  }else{
+    refreshUpdateCard();
+  }
+
   if(WOLF_OTA.userInitiated){
     toast(s.available?`Dostępna aktualizacja ${s.versionName}`:'WolfEdu jest aktualne');
   }
@@ -194,6 +199,14 @@ window.wolfOtaDownloadResult=function(result){
 
 function initWolfUpdates(){
   if(!hasUpdateBridge())return;
-  try{WolfUpdate.getCurrentVersion()}catch(e){}
-  // OTA v2 nie sprawdza automatycznie przy starcie. Najpierw stabilny ręczny flow.
+
+  try{
+    WolfUpdate.getCurrentVersion();
+  }catch(e){}
+
+  setTimeout(()=>{
+    try{
+      checkWolfUpdate(false);
+    }catch(e){}
+  },900);
 }

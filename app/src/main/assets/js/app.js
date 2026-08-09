@@ -57,9 +57,80 @@ function renderSchoolSystemLock(){
     </section>`;
 }
 
+function wolfMandatoryUpdateBlocked(){
+  const s=(typeof WOLF_OTA!=='undefined' && WOLF_OTA) ? WOLF_OTA.state : null;
+
+  return !!(
+    s &&
+    s.phase==='available' &&
+    s.available &&
+    s.mandatory
+  );
+}
+
+function renderMandatoryUpdateLock(){
+  const s=WOLF_OTA.state;
+
+  setHead(
+    'Wymagana aktualizacja',
+    `WolfEdu ${s.versionName||''}`
+  );
+
+  $('#nav').classList.add('hidden');
+
+  app.innerHTML=`
+    <section class="card"
+      style="margin-top:18px;text-align:center;padding:28px 18px">
+
+      <div style="font-size:42px;margin-bottom:10px">⬆️</div>
+
+      <h2>Musisz zaktualizować WolfEdu</h2>
+
+      <p class="muted" style="line-height:1.5">
+        Wersja ${esc(s.versionName||'')} jest wymagana przed dalszym
+        korzystaniem z aplikacji.
+      </p>
+
+      ${
+        s.changelog
+          ? `<div class="sync-note" style="margin-top:14px;text-align:left">
+               <b>Co nowego:</b><br>
+               ${esc(s.changelog)}
+             </div>`
+          : ''
+      }
+
+      ${
+        s.downloadState
+          ? `<div class="sync-note" style="margin-top:14px">
+               ${esc(s.message||s.downloadState)}
+             </div>`
+          : ''
+      }
+
+      <button
+        style="width:100%;margin-top:16px"
+        onclick="installWolfUpdate()">
+        Zaktualizuj teraz
+      </button>
+
+      <button
+        class="secondary"
+        style="width:100%;margin-top:10px"
+        onclick="checkWolfUpdate(true)">
+        Sprawdź ponownie
+      </button>
+    </section>`;
+}
+
 function render(p=page){
   page=p||'home';
   currentPage=page;
+
+  if(wolfMandatoryUpdateBlocked()){
+    renderMandatoryUpdateLock();
+    return;
+  }
 
   if(schoolSystemBlocked() && currentPage!=='settings'){
     $('#nav').classList.remove('hidden');
