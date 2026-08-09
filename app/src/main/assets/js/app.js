@@ -280,14 +280,14 @@ function schoolHub(){
 }
 
 function peopleHub(){
-  setHead('Ludzie',wolfSchool.schoolName||'WolfEdu');
+  setHead('Osoby',wolfSchool.schoolName||'WolfEdu');
 
   const role=String(wolfSchool?.role||'').toLowerCase();
   const adminLike=['owner','admin'].includes(role);
 
   app.innerHTML=`
     <section class="card">
-      <h2>Ludzie</h2>
+      <h2>Osoby</h2>
 
       <div class="hub-grid">
         <button class="hub-tile" onclick="render('studentsPage')">

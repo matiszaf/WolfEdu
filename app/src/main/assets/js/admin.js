@@ -13,7 +13,6 @@ function adminGuard(title){
 
 function schoolPage(){
   if(!adminGuard('Szkoła'))return;
-  const can=canManageSchool();
   const schools=wolfSchool.schools||[];
   app.innerHTML=`
     <div class="card">
@@ -30,15 +29,6 @@ function schoolPage(){
       <input id="csYear" placeholder="Rok szkolny, np. 2026/2027">
       <button style="width:100%" onclick="createCloudSchoolMobile(this)">Utwórz szkołę</button>
       <div class="sync-note">Tak samo jak w panelu WWW: każde zalogowane konto może utworzyć własną szkołę i automatycznie zostaje jej właścicielem.</div>
-    </div>
-    <div class="card"><h2>Zarządzanie</h2>
-      <div class="action-grid">
-        <button class="action-card" onclick="render('classes')"><span class="action-icon">▦</span><b>Klasy</b><small>${(wolfSchool.classes||[]).length}</small></button>
-        <button class="action-card" onclick="render('studentsPage')"><span class="action-icon">♙</span><b>Uczniowie</b><small>${(wolfSchool.students||[]).length}</small></button>
-        <button class="action-card" onclick="render('teachersPage')"><span class="action-icon">♟</span><b>Nauczyciele</b><small>${(wolfSchool.teachers||[]).length}</small></button>
-        <button class="action-card" onclick="render('subjectsPage')"><span class="action-icon">▤</span><b>Przedmioty</b><small>${(wolfSchool.subjects||[]).length}</small></button>
-        ${can?`<button class="action-card" onclick="render('usersRolesPage')"><span class="action-icon">♚</span><b>Użytkownicy i role</b><small>${(wolfSchool.members||[]).length} kont</small></button>`:''}
-      </div>
     </div>`;
 }
 function createCloudSchoolMobile(btn){

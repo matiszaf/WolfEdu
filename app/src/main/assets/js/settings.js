@@ -154,36 +154,6 @@ function settings(){
           }
         </div>
 
-        ${syncLoggedIn
-          ? `
-            <div class="settings-card">
-              <div class="settings-card-head">
-                <div>
-                  <div class="settings-icon">🏫</div>
-                  <div>
-                    <h3>Szkoła</h3>
-                    <p>Panel i uprawnienia</p>
-                  </div>
-                </div>
-              </div>
-
-              <div class="settings-list-row">
-                <div>
-                  <b>${esc(wolfSchool.schoolName||'Brak aktywnej szkoły')}</b>
-                  <small>${esc(roleLabel())}</small>
-                </div>
-
-                <button onclick="render('schoolPage')">Otwórz</button>
-              </div>
-
-              <div class="settings-note">
-                Te same dane i funkcje administracyjne co w panelu WWW,
-                dostosowane do telefonu.
-              </div>
-            </div>
-          `
-          : ''
-        }
 
         ${syncLoggedIn && invitesCount
           ? `
