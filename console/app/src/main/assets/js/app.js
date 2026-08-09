@@ -887,6 +887,11 @@ function refreshReleaseInfo(){
   WolfConsole.requestReleaseInfo();
 }
 
+function refreshReleaseCenter(){
+  refreshReleaseInfo();
+  refreshReleaseQueue();
+}
+
 function refreshReleaseQueue(){
   if(releaseQueueLoading)return;
 
@@ -927,7 +932,7 @@ function releaseQueueHtml(){
     return `<section class="card error-card">
       <b>Błąd kolejki</b>
       <small>${esc(releaseQueueError)}</small>
-      <button class="secondary full top-gap" onclick="refreshReleaseQueue()">
+      <button class="secondary full top-gap" onclick="refreshReleaseCenter()">
         Spróbuj ponownie
       </button>
     </section>`;
@@ -940,7 +945,7 @@ function releaseQueueHtml(){
         <small>Kolejka sprawdzana automatycznie co 2 minuty</small>
       </div>
 
-      <button class="link-btn" onclick="refreshReleaseQueue()">
+      <button class="link-btn" onclick="refreshReleaseCenter()">
         Odśwież
       </button>
     </div>
