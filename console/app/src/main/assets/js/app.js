@@ -1228,6 +1228,21 @@ function diagnosticsView(){
         Odśwież stan Console
       </button>
 
+      ${
+        consoleSelfUpdateAvailable()
+          ? `
+            <button class="primary full top-gap"
+              onclick="WolfConsole.installConsoleUpdate(consoleSelfUpdateInfo.apkUrl)">
+              Pobierz i zainstaluj Console ${esc(consoleSelfUpdateInfo?.versionName||'')}
+            </button>
+
+            <small>
+              Android otworzy systemowy instalator aktualizacji.
+            </small>
+          `
+          : ''
+      }
+
       <button class="secondary full top-gap"
         onclick="refreshConsoleSelfUpdate();toast('Sprawdzam aktualizację Console…')">
         Sprawdź aktualizację Console

@@ -21,6 +21,14 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+
+import android.content.Intent;
+import android.net.Uri;
+
+import androidx.core.content.FileProvider;
 
 public class ConsoleBridge {
     private final WebView webView;
@@ -350,6 +358,114 @@ public class ConsoleBridge {
                 })
                 .addOnFailureListener(err -> emitError(friendly(err.getMessage())));
     }
+
+
+    @JavascriptInterface
+    public void installConsoleUpdate(String apkUrl) {
+        if (apkUrl == null || apkUrl.isBlank()) {
+            emitError("Brak adresu APK aktualizacji.");
+            return;
+        }
+
+        if (!apkUrl.startsWith(
+                "https://github.com/matiszaf/WolfEdu-Releases/")) {
+            emitError("Nieprawidłowe źródło aktualizacji.");
+            return;
+        }
+
+        emitMessage("Pobieram aktualizację WolfEdu Console…");
+
+        new Thread(() -> {
+            HttpURLConnection connection = null;
+
+            try {
+                URL url = new URL(apkUrl);
+
+                connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod("GET");
+                connection.setConnectTimeout(15000);
+                connection.setReadTimeout(30000);
+                connection.setInstanceFollowRedirects(true);
+
+                int status = connection.getResponseCode();
+
+                if (status < 200 || status >= 300) {
+                    throw new Exception("HTTP " + status);
+                }
+
+                File updateDir = new File(
+                        webView.getContext().getCacheDir(),
+                        "updates"
+                );
+
+                if (!updateDir.exists() && !updateDir.mkdirs()) {
+                    throw new Exception(
+                            "Nie udało się utworzyć katalogu aktualizacji."
+                    );
+                }
+
+                File apk = new File(
+                        updateDir,
+                        "WolfEdu-Console-update.apk"
+                );
+
+                try (
+                    InputStream input = connection.getInputStream();
+                    FileOutputStream output = new FileOutputStream(apk)
+                ) {
+                    byte[] buffer = new byte[8192];
+                    int read;
+
+                    while ((read = input.read(buffer)) != -1) {
+                        output.write(buffer, 0, read);
+                    }
+
+                    output.flush();
+                }
+
+                if (!apk.exists() || apk.length() == 0) {
+                    throw new Exception("Pobrany APK jest pusty.");
+                }
+
+                Uri apkUri = FileProvider.getUriForFile(
+                        webView.getContext(),
+                        webView.getContext().getPackageName()
+                                + ".fileprovider",
+                        apk
+                );
+
+                Intent intent = new Intent(Intent.ACTION_VIEW);
+                intent.setDataAndType(
+                        apkUri,
+                        "application/vnd.android.package-archive"
+                );
+                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
+                webView.post(() -> {
+                    try {
+                        webView.getContext().startActivity(intent);
+                    } catch (Exception err) {
+                        emitError(
+                                "Nie udało się uruchomić instalatora: "
+                                + friendly(err.getMessage())
+                        );
+                    }
+                });
+
+            } catch (Exception err) {
+                emitError(
+                        "Nie udało się pobrać aktualizacji: "
+                        + friendly(err.getMessage())
+                );
+            } finally {
+                if (connection != null) {
+                    connection.disconnect();
+                }
+            }
+        }).start();
+    }
+
 
 
     @JavascriptInterface
