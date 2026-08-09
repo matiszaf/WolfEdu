@@ -1,0 +1,230 @@
+name: WolfEdu Console Update Package
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_name:
+        description: "Wersja Console, np. 2.0.9"
+        required: true
+        default: "2.0.9"
+
+      changelog:
+        description: "Krótki opis zmian"
+        required: true
+        default: "Nowa wersja WolfEdu Console"
+
+      mandatory:
+        description: "Aktualizacja wymagana?"
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  publish-update:
+    name: Build i publikacja Console OTA
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Pobierz kod WolfEdu
+        uses: actions/checkout@v4
+
+      - name: Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Gradle 8.13
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.13"
+
+      - name: Sprawdź wymagane sekrety
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          CONSOLE_CONFIG: ${{ secrets.CONSOLE_GOOGLE_SERVICES_JSON_BASE64 }}
+          RELEASES_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+        run: |
+          test -n "$KEYSTORE_BASE64" || { echo "Brakuje KEYSTORE_BASE64"; exit 1; }
+          test -n "$KEYSTORE_PASSWORD" || { echo "Brakuje KEYSTORE_PASSWORD"; exit 1; }
+          test -n "$KEY_ALIAS" || { echo "Brakuje KEY_ALIAS"; exit 1; }
+          test -n "$KEY_PASSWORD" || { echo "Brakuje KEY_PASSWORD"; exit 1; }
+          test -n "$CONSOLE_CONFIG" || { echo "Brakuje CONSOLE_GOOGLE_SERVICES_JSON_BASE64"; exit 1; }
+          test -n "$RELEASES_TOKEN" || { echo "Brakuje RELEASES_TOKEN"; exit 1; }
+
+      - name: Ustal wersję Console
+        env:
+          VERSION_NAME: ${{ inputs.version_name }}
+        shell: bash
+        run: |
+          if [[ ! "$VERSION_NAME" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Wersja Console musi mieć format X.Y.Z"
+            exit 1
+          fi
+
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION_NAME"
+
+          VERSION_CODE=$((1000000 + MAJOR*1000000 + MINOR*10000 + PATCH*100))
+
+          echo "WOLFEDU_CONSOLE_VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
+          echo "WOLFEDU_CONSOLE_VERSION_CODE=$VERSION_CODE" >> "$GITHUB_ENV"
+          echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
+          echo "VERSION_CODE=$VERSION_CODE" >> "$GITHUB_ENV"
+          echo "RELEASE_TAG=console-v$VERSION_NAME" >> "$GITHUB_ENV"
+
+          echo "WolfEdu Console $VERSION_NAME ($VERSION_CODE)"
+
+      - name: Odtwórz keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          printf '%s' "$KEYSTORE_BASE64" \
+            | base64 --decode \
+            > "$RUNNER_TEMP/release.keystore"
+
+          test -s "$RUNNER_TEMP/release.keystore"
+
+      - name: Odtwórz google-services.json Console
+        env:
+          CONSOLE_CONFIG: ${{ secrets.CONSOLE_GOOGLE_SERVICES_JSON_BASE64 }}
+        run: |
+          printf '%s' "$CONSOLE_CONFIG" \
+            | base64 --decode \
+            > console/app/google-services.json
+
+          test -s console/app/google-services.json
+
+          grep -q 'pl.wolfedu.console' console/app/google-services.json || {
+            echo "Firebase config nie jest dla pl.wolfedu.console"
+            exit 1
+          }
+
+      - name: Build podpisanego Console APK
+        env:
+          KEYSTORE_FILE: ${{ runner.temp }}/release.keystore
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          gradle --no-daemon -p console :app:assembleRelease
+
+      - name: Przygotuj Console APK
+        run: |
+          mkdir -p dist-console
+
+          test -s console/app/build/outputs/apk/release/app-release.apk
+
+          cp \
+            console/app/build/outputs/apk/release/app-release.apk \
+            dist-console/WolfEdu-Console.apk
+
+          test -s dist-console/WolfEdu-Console.apk
+
+      - name: Wygeneruj console-version.json
+        env:
+          CHANGELOG: ${{ inputs.changelog }}
+          MANDATORY: ${{ inputs.mandatory }}
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import datetime
+          import json
+          import os
+
+          payload = {
+              "versionName": os.environ["VERSION_NAME"],
+              "versionCode": int(os.environ["VERSION_CODE"]),
+              "mandatory": os.environ.get(
+                  "MANDATORY",
+                  "false"
+              ).lower() == "true",
+              "apkUrl": (
+                  "https://github.com/matiszaf/WolfEdu-Releases/"
+                  f"releases/download/console-v{os.environ['VERSION_NAME']}/"
+                  "WolfEdu-Console.apk"
+              ),
+              "changelog": os.environ.get("CHANGELOG", ""),
+              "publishedAt": datetime.datetime.now(
+                  datetime.timezone.utc
+              ).isoformat()
+          }
+
+          with open(
+              "dist-console/console-version.json",
+              "w",
+              encoding="utf-8"
+          ) as f:
+              json.dump(payload, f, ensure_ascii=False, indent=2)
+
+          print(json.dumps(payload, ensure_ascii=False, indent=2))
+          PY
+
+      - name: Sprawdź czy wersja Console już istnieje
+        env:
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+        shell: bash
+        run: |
+          if gh release view "$RELEASE_TAG" \
+            --repo matiszaf/WolfEdu-Releases \
+            >/dev/null 2>&1
+          then
+            echo "Release $RELEASE_TAG już istnieje."
+            exit 1
+          fi
+
+      - name: Utwórz publiczny GitHub Release Console
+        env:
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+          CHANGELOG: ${{ inputs.changelog }}
+        shell: bash
+        run: |
+          gh release create "$RELEASE_TAG" \
+            dist-console/WolfEdu-Console.apk \
+            dist-console/console-version.json \
+            --repo matiszaf/WolfEdu-Releases \
+            --title "WolfEdu Console $VERSION_NAME" \
+            --notes "$CHANGELOG" \
+            --latest=false
+
+      - name: Opublikuj najnowszy console-version.json
+        env:
+          RELEASES_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+        shell: bash
+        run: |
+          git clone \
+            "https://x-access-token:${RELEASES_TOKEN}@github.com/matiszaf/WolfEdu-Releases.git" \
+            "$RUNNER_TEMP/WolfEdu-Releases"
+
+          cd "$RUNNER_TEMP/WolfEdu-Releases"
+
+          git config user.name "WolfEdu Release Bot"
+          git config user.email "actions@users.noreply.github.com"
+
+          cp \
+            "$GITHUB_WORKSPACE/dist-console/console-version.json" \
+            console-version.json
+
+          git add console-version.json
+
+          if git diff --cached --quiet; then
+            echo "console-version.json bez zmian."
+          else
+            git commit -m "release: WolfEdu Console $VERSION_NAME"
+            git push origin main
+          fi
+
+      - name: Zachowaj artefakt buildu
+        uses: actions/upload-artifact@v4
+        with:
+          name: WolfEdu-Console-Update-${{ inputs.version_name }}
+          path: |
+            dist-console/WolfEdu-Console.apk
+            dist-console/console-version.json
+          if-no-files-found: error
+          retention-days: 30
