@@ -1165,31 +1165,208 @@ public final class FirebaseSyncBridge {
         return array;
     }
 
-    private void emitSchoolState() {
-        JSONObject payload = new JSONObject();
+    private JSONArray filterByField(JSONArray source, String field, java.util.Set<String> allowed) {
+        JSONArray out = new JSONArray();
+        if (source == null || allowed == null || allowed.isEmpty()) return out;
+
+        for (int i = 0; i < source.length(); i++) {
+            JSONObject item = source.optJSONObject(i);
+            if (item == null) continue;
+
+            String value = item.optString(field, "").trim();
+            if (allowed.contains(value)) out.put(item);
+        }
+
+        return out;
+    }
+
+    private java.util.Set<String> linkedStudentIdsForParent(String parentId) {
+        java.util.Set<String> ids = new java.util.HashSet<>();
+        if (parentId == null || parentId.isBlank()) return ids;
+
+        for (int i = 0; i < schoolParents.length(); i++) {
+            JSONObject parent = schoolParents.optJSONObject(i);
+            if (parent == null || !parentId.equals(parent.optString("id", ""))) continue;
+
+            JSONArray studentIds = parent.optJSONArray("studentIds");
+            if (studentIds == null) return ids;
+
+            for (int j = 0; j < studentIds.length(); j++) {
+                String id = studentIds.optString(j, "").trim();
+                if (!id.isBlank()) ids.add(id);
+            }
+            return ids;
+        }
+
+        return ids;
+    }
+
+    private java.util.Set<String> classIdsForStudents(java.util.Set<String> studentIds) {
+        java.util.Set<String> classIds = new java.util.HashSet<>();
+        if (studentIds == null || studentIds.isEmpty()) return classIds;
+
+        for (int i = 0; i < schoolStudents.length(); i++) {
+            JSONObject student = schoolStudents.optJSONObject(i);
+            if (student == null) continue;
+
+            if (!studentIds.contains(student.optString("id", ""))) continue;
+
+            String classId = student.optString("classId", "").trim();
+            if (!classId.isBlank()) classIds.add(classId);
+        }
+
+        return classIds;
+    }
+
+    private JSONArray visibleTasks(java.util.Set<String> studentIds, java.util.Set<String> classIds) {
+        JSONArray out = new JSONArray();
+
+        for (int i = 0; i < schoolTasks.length(); i++) {
+            JSONObject task = schoolTasks.optJSONObject(i);
+            if (task == null) continue;
+
+            String studentId = task.optString("studentId", "").trim();
+            String classId = task.optString("classId", "").trim();
+
+            boolean personal = !studentId.isBlank() && studentIds.contains(studentId);
+            boolean classTask = studentId.isBlank() && !classId.isBlank() && classIds.contains(classId);
+
+            if (personal || classTask) out.put(task);
+        }
+
+        return out;
+    }
+
+    private JSONArray publicTeachersView() {
+        JSONArray out = new JSONArray();
+
+        for (int i = 0; i < schoolTeachers.length(); i++) {
+            JSONObject teacher = schoolTeachers.optJSONObject(i);
+            if (teacher == null) continue;
+
+            JSONObject visible = new JSONObject();
+            try {
+                visible.put("id", teacher.optString("id", ""));
+                visible.put("name", teacher.optString("name", ""));
+                visible.put("title", teacher.optString("title", ""));
+            } catch (Exception ignored) {}
+
+            out.put(visible);
+        }
+
+        return out;
+    }
+
+    private JSONObject buildVisibleSchoolState() {
+        JSONObject visible = new JSONObject();
+
         try {
-            payload.put("activeSchoolId", activeSchoolId);
-            payload.put("schoolName", activeSchoolName);
-            payload.put("role", activeRole);
-            payload.put("personType", activePersonType);
-            payload.put("personId", activePersonId);
-            payload.put("systemStatus", activeSchoolSystemStatus);
-            payload.put("systemStatusReason", activeSchoolSystemStatusReason);
-            payload.put("schools", availableSchools);
-            payload.put("classes", schoolClasses);
-            payload.put("subjects", schoolSubjects);
-            payload.put("teachers", schoolTeachers);
-            payload.put("students", schoolStudents);
-            payload.put("parents", schoolParents);
-            payload.put("grades", schoolGrades);
-            payload.put("tasks", schoolTasks);
-            payload.put("attendance", schoolAttendance);
-            payload.put("timetable", schoolTimetable);
-            payload.put("lessonRecords", schoolLessonRecords);
-            payload.put("members", schoolMembers);
-            payload.put("invites", schoolInvites);
-            payload.put("myInvites", myInvites);
+            String role = value(activeRole).trim().toLowerCase();
+            String personType = value(activePersonType).trim().toLowerCase();
+            String personId = value(activePersonId).trim();
+
+            boolean ownerOrAdmin = "owner".equals(role) || "admin".equals(role);
+            boolean teacher = "teacher".equals(role);
+            boolean student = "student".equals(role);
+            boolean parent = "parent".equals(role);
+            boolean identityPending = role.isBlank() && personType.isBlank();
+
+            JSONArray visibleClasses = schoolClasses;
+            JSONArray visibleTeachers = schoolTeachers;
+            JSONArray visibleStudents = schoolStudents;
+            JSONArray visibleParents = schoolParents;
+            JSONArray visibleGrades = schoolGrades;
+            JSONArray visibleTasks = schoolTasks;
+            JSONArray visibleAttendance = schoolAttendance;
+            JSONArray visibleTimetable = schoolTimetable;
+            JSONArray visibleLessonRecords = schoolLessonRecords;
+            JSONArray visibleMembers = schoolMembers;
+            JSONArray visibleInvites = schoolInvites;
+
+            if (identityPending) {
+                visibleTeachers = new JSONArray();
+                visibleStudents = new JSONArray();
+                visibleParents = new JSONArray();
+                visibleGrades = new JSONArray();
+                visibleTasks = new JSONArray();
+                visibleAttendance = new JSONArray();
+                visibleTimetable = new JSONArray();
+                visibleLessonRecords = new JSONArray();
+                visibleMembers = new JSONArray();
+                visibleInvites = new JSONArray();
+            } else if (ownerOrAdmin || teacher) {
+                // Pełny zakres danych dla administracji i nauczycieli.
+            } else if (student || parent) {
+                java.util.Set<String> studentIds = new java.util.HashSet<>();
+
+                if (student && !personId.isBlank()) {
+                    studentIds.add(personId);
+                } else if (parent && !personId.isBlank()) {
+                    studentIds.addAll(linkedStudentIdsForParent(personId));
+                }
+
+                java.util.Set<String> classIds = classIdsForStudents(studentIds);
+
+                visibleTeachers = publicTeachersView();
+                visibleStudents = filterByField(schoolStudents, "id", studentIds);
+                visibleClasses = filterByField(schoolClasses, "id", classIds);
+                visibleGrades = filterByField(schoolGrades, "studentId", studentIds);
+                visibleAttendance = filterByField(schoolAttendance, "studentId", studentIds);
+                visibleTasks = visibleTasks(studentIds, classIds);
+                visibleTimetable = filterByField(schoolTimetable, "classId", classIds);
+                visibleLessonRecords = filterByField(schoolLessonRecords, "classId", classIds);
+
+                if (parent) {
+                    java.util.Set<String> ownParentId = new java.util.HashSet<>();
+                    if (!personId.isBlank()) ownParentId.add(personId);
+                    visibleParents = filterByField(schoolParents, "id", ownParentId);
+                } else {
+                    visibleParents = new JSONArray();
+                }
+
+                visibleMembers = new JSONArray();
+                visibleInvites = new JSONArray();
+            } else if (!(ownerOrAdmin || teacher)) {
+                visibleTeachers = new JSONArray();
+                visibleStudents = new JSONArray();
+                visibleParents = new JSONArray();
+                visibleGrades = new JSONArray();
+                visibleTasks = new JSONArray();
+                visibleAttendance = new JSONArray();
+                visibleTimetable = new JSONArray();
+                visibleLessonRecords = new JSONArray();
+                visibleMembers = new JSONArray();
+                visibleInvites = new JSONArray();
+            }
+
+            visible.put("activeSchoolId", activeSchoolId);
+            visible.put("schoolName", activeSchoolName);
+            visible.put("role", activeRole);
+            visible.put("personType", activePersonType);
+            visible.put("personId", activePersonId);
+            visible.put("systemStatus", activeSchoolSystemStatus);
+            visible.put("systemStatusReason", activeSchoolSystemStatusReason);
+            visible.put("schools", availableSchools);
+            visible.put("classes", visibleClasses);
+            visible.put("subjects", schoolSubjects);
+            visible.put("teachers", visibleTeachers);
+            visible.put("students", visibleStudents);
+            visible.put("parents", visibleParents);
+            visible.put("grades", visibleGrades);
+            visible.put("tasks", visibleTasks);
+            visible.put("attendance", visibleAttendance);
+            visible.put("timetable", visibleTimetable);
+            visible.put("lessonRecords", visibleLessonRecords);
+            visible.put("members", visibleMembers);
+            visible.put("invites", visibleInvites);
+            visible.put("myInvites", myInvites);
         } catch (Exception ignored) {}
+
+        return visible;
+    }
+
+    private void emitSchoolState() {
+        JSONObject payload = buildVisibleSchoolState();
         call("window.wolfSchoolData(" + payload.toString() + ")");
     }
 
