@@ -337,6 +337,7 @@ public final class FirebaseSyncBridge {
                             .collection("parents")
                             .add(parent)
                             .addOnSuccessListener(parentRef -> {
+                                emitStatus("Rodzic utworzony", cleanParentName.isBlank() ? cleanParentEmail : cleanParentName, "online");
                                 Map<String, Object> link = new HashMap<>();
                                 link.put(
                                         "parentIds",
