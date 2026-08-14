@@ -233,6 +233,360 @@ public class ConsoleBridge {
                 .addOnFailureListener(err -> emitError(friendly(err.getMessage())));
     }
 
+
+    private boolean isCreator() {
+        return adminProfile != null
+                && "creator".equals(
+                    value(adminProfile.getString("role")).trim().toLowerCase()
+                );
+    }
+
+    @JavascriptInterface
+    public void createSchool(
+            String name,
+            String city,
+            String type,
+            String schoolYear,
+            String ownerUid
+    ) {
+        FirebaseUser user = auth.getCurrentUser();
+
+        if (user == null || !isCreator()) {
+            emitError("Tylko creator może tworzyć szkoły.");
+            return;
+        }
+
+        String cleanName = name == null ? "" : name.trim();
+        String cleanCity = city == null ? "" : city.trim();
+        String cleanType = type == null ? "" : type.trim();
+        String cleanYear = schoolYear == null ? "" : schoolYear.trim();
+        String cleanOwnerUid = ownerUid == null ? "" : ownerUid.trim();
+
+        if (cleanName.isEmpty()) {
+            emitError("Nazwa szkoły jest wymagana.");
+            return;
+        }
+
+        if (cleanOwnerUid.isEmpty()) {
+            emitError("UID właściciela jest wymagany.");
+            return;
+        }
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("name", cleanName);
+        payload.put("city", cleanCity);
+        payload.put("type", cleanType);
+        payload.put("schoolYear", cleanYear);
+        payload.put("ownerUid", cleanOwnerUid);
+        payload.put("systemStatus", "active");
+        payload.put("systemStatusReason", "");
+        payload.put("createdAt", FieldValue.serverTimestamp());
+        payload.put("createdBy", user.getUid());
+        payload.put("createdByEmail", value(user.getEmail()));
+        payload.put("updatedAt", FieldValue.serverTimestamp());
+        payload.put("updatedBy", user.getUid());
+
+        DocumentReference schoolRef =
+                db.collection("schools").document();
+
+        DocumentReference ownerMemberRef =
+                schoolRef.collection("members")
+                        .document(cleanOwnerUid);
+
+        Map<String, Object> member = new HashMap<>();
+        member.put("uid", cleanOwnerUid);
+        member.put("role", "owner");
+        member.put("joinedAt", FieldValue.serverTimestamp());
+        member.put("createdBy", user.getUid());
+
+        com.google.firebase.firestore.WriteBatch batch =
+                db.batch();
+
+        batch.set(schoolRef, payload);
+        batch.set(ownerMemberRef, member);
+
+        batch.commit()
+                .addOnSuccessListener(done ->
+                        emitMessage("Szkoła została utworzona.")
+                )
+                .addOnFailureListener(err ->
+                        emitError(friendly(err.getMessage()))
+                );
+    }
+
+    @JavascriptInterface
+    public void deleteSchool(String schoolId) {
+        FirebaseUser user = auth.getCurrentUser();
+
+        if (
+                user == null
+                || !isCreator()
+                || schoolId == null
+                || schoolId.isBlank()
+        ) {
+            emitError("Brak uprawnień do usunięcia szkoły.");
+            return;
+        }
+
+        String cleanSchoolId = schoolId.trim();
+        DocumentReference schoolRef =
+                db.collection("schools").document(cleanSchoolId);
+
+        schoolRef.get()
+                .addOnSuccessListener(snapshot -> {
+                    if (!snapshot.exists()) {
+                        emitError("Szkoła nie istnieje.");
+                        return;
+                    }
+
+                    clearSchoolFromUserProfiles(
+                            cleanSchoolId,
+                            snapshot.getString("ownerUid"),
+                            () -> deleteSchoolCollections(
+                                    cleanSchoolId,
+                                    new String[]{
+                                            "members",
+                                            "classes",
+                                            "students",
+                                            "parents",
+                                            "teachers",
+                                            "subjects",
+                                            "timetable",
+                                            "lessonRecords",
+                                            "grades",
+                                            "tasks",
+                                            "attendance"
+                                    },
+                                    0,
+                                    () -> deleteSchoolInvites(
+                                            cleanSchoolId,
+                                            () -> schoolRef.delete()
+                                                    .addOnSuccessListener(done -> {
+                                                        selectedSchoolDeleted(cleanSchoolId);
+                                                        emitMessage("Szkoła została usunięta.");
+                                                    })
+                                                    .addOnFailureListener(err ->
+                                                            emitError(friendly(err.getMessage()))
+                                                    )
+                                    )
+                            )
+                    );
+                })
+                .addOnFailureListener(err ->
+                        emitError(friendly(err.getMessage()))
+                );
+    }
+
+    private void clearSchoolFromUserProfiles(
+            String schoolId,
+            String ownerUid,
+            Runnable done
+    ) {
+        db.collection("schools")
+                .document(schoolId)
+                .collection("members")
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    java.util.Set<String> uids =
+                            new java.util.HashSet<>();
+
+                    if (ownerUid != null && !ownerUid.isBlank()) {
+                        uids.add(ownerUid.trim());
+                    }
+
+                    for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                        String uid = doc.getId();
+                        if (uid != null && !uid.isBlank()) {
+                            uids.add(uid);
+                        }
+                    }
+
+                    if (uids.isEmpty()) {
+                        done.run();
+                        return;
+                    }
+
+                    java.util.concurrent.atomic.AtomicInteger remaining =
+                            new java.util.concurrent.atomic.AtomicInteger(
+                                    uids.size()
+                            );
+
+                    java.util.concurrent.atomic.AtomicBoolean failed =
+                            new java.util.concurrent.atomic.AtomicBoolean(false);
+
+                    for (String uid : uids) {
+                        DocumentReference userRef =
+                                db.collection("users").document(uid);
+
+                        userRef.get()
+                                .addOnSuccessListener(userDoc -> {
+                                    if (
+                                            userDoc.exists()
+                                            && schoolId.equals(
+                                                value(
+                                                    userDoc.getString(
+                                                        "activeSchoolId"
+                                                    )
+                                                )
+                                            )
+                                    ) {
+                                        Map<String, Object> update =
+                                                new HashMap<>();
+
+                                        update.put("activeSchoolId", "");
+
+                                        userRef.set(
+                                                update,
+                                                SetOptions.merge()
+                                        )
+                                        .addOnSuccessListener(unused -> {
+                                            if (
+                                                remaining.decrementAndGet() == 0
+                                                && !failed.get()
+                                            ) {
+                                                done.run();
+                                            }
+                                        })
+                                        .addOnFailureListener(err -> {
+                                            if (
+                                                failed.compareAndSet(
+                                                    false,
+                                                    true
+                                                )
+                                            ) {
+                                                emitError(
+                                                    friendly(
+                                                        err.getMessage()
+                                                    )
+                                                );
+                                            }
+                                        });
+
+                                    } else {
+                                        if (
+                                            remaining.decrementAndGet() == 0
+                                            && !failed.get()
+                                        ) {
+                                            done.run();
+                                        }
+                                    }
+                                })
+                                .addOnFailureListener(err -> {
+                                    if (
+                                        failed.compareAndSet(
+                                            false,
+                                            true
+                                        )
+                                    ) {
+                                        emitError(
+                                            friendly(err.getMessage())
+                                        );
+                                    }
+                                });
+                    }
+                })
+                .addOnFailureListener(err ->
+                        emitError(friendly(err.getMessage()))
+                );
+    }
+
+    private void deleteSchoolCollections(
+            String schoolId,
+            String[] collections,
+            int index,
+            Runnable done
+    ) {
+        if (index >= collections.length) {
+            done.run();
+            return;
+        }
+
+        db.collection("schools")
+                .document(schoolId)
+                .collection(collections[index])
+                .limit(400)
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    if (snapshot.isEmpty()) {
+                        deleteSchoolCollections(
+                                schoolId,
+                                collections,
+                                index + 1,
+                                done
+                        );
+                        return;
+                    }
+
+                    com.google.firebase.firestore.WriteBatch batch =
+                            db.batch();
+
+                    for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                        batch.delete(doc.getReference());
+                    }
+
+                    batch.commit()
+                            .addOnSuccessListener(unused ->
+                                    deleteSchoolCollections(
+                                            schoolId,
+                                            collections,
+                                            index,
+                                            done
+                                    )
+                            )
+                            .addOnFailureListener(err ->
+                                    emitError(friendly(err.getMessage()))
+                            );
+                })
+                .addOnFailureListener(err ->
+                        emitError(friendly(err.getMessage()))
+                );
+    }
+
+    private void deleteSchoolInvites(
+            String schoolId,
+            Runnable done
+    ) {
+        db.collection("schoolInvites")
+                .whereEqualTo("schoolId", schoolId)
+                .limit(400)
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    if (snapshot.isEmpty()) {
+                        done.run();
+                        return;
+                    }
+
+                    com.google.firebase.firestore.WriteBatch batch =
+                            db.batch();
+
+                    for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                        batch.delete(doc.getReference());
+                    }
+
+                    batch.commit()
+                            .addOnSuccessListener(unused ->
+                                    deleteSchoolInvites(
+                                            schoolId,
+                                            done
+                                    )
+                            )
+                            .addOnFailureListener(err ->
+                                    emitError(friendly(err.getMessage()))
+                            );
+                })
+                .addOnFailureListener(err ->
+                        emitError(friendly(err.getMessage()))
+                );
+    }
+
+    private void selectedSchoolDeleted(String schoolId) {
+        evaluate(
+                "if(window.selectedSchoolId===" + js(schoolId) + "){"
+                + "window.selectedSchoolId='';"
+                + "}"
+        );
+    }
+
     @JavascriptInterface
     public void setSchoolStatus(String schoolId, String status) {
         setSchoolStatusDetailed(schoolId, status, "");

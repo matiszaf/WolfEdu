@@ -529,7 +529,15 @@ function schoolsView(){
           <small>${filtered.length} z ${schools.length} rekordów</small>
         </div>
 
-        <span class="badge ok">${counts.active} aktywnych</span>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <span class="badge ok">${counts.active} aktywnych</span>
+          ${systemRole==='creator'
+            ? `<button class="primary" onclick="createSchoolFromConsole()">
+                + Dodaj szkołę
+              </button>`
+            : ''
+          }
+        </div>
       </div>
 
       <input
@@ -653,7 +661,127 @@ function schoolDetailsView(){
           </div>`
         : ''
       }
-    </section>`;
+    </section>
+
+    ${systemRole==='creator'
+      ? `<section class="card">
+          <div class="section-head">
+            <div>
+              <h2>Strefa niebezpieczna</h2>
+              <small>Usunięcie szkoły usuwa jej dane z WolfCloud.</small>
+            </div>
+          </div>
+
+          <button
+            class="danger"
+            onclick="deleteSchoolFromConsole('${esc(s.id)}')">
+            Usuń szkołę
+          </button>
+        </section>`
+      : ''
+    }`;
+}
+
+
+function createSchoolFromConsole(){
+  if(systemRole!=='creator'){
+    toast('Tylko creator może tworzyć szkoły.');
+    return;
+  }
+
+  if(
+    typeof WolfConsole.createSchool!=='function'
+  ){
+    toast('Ta wersja ConsoleBridge nie obsługuje tworzenia szkół.');
+    return;
+  }
+
+  const name=prompt('Nazwa szkoły:','');
+  if(name===null)return;
+
+  const cleanName=name.trim();
+  if(!cleanName){
+    toast('Nazwa szkoły jest wymagana.');
+    return;
+  }
+
+  const city=prompt('Miasto:','') ?? '';
+  const type=prompt(
+    'Typ szkoły, np. Szkoła podstawowa / Technikum / Liceum:',
+    ''
+  ) ?? '';
+
+  const schoolYear=prompt(
+    'Rok szkolny, np. 2026/2027:',
+    ''
+  ) ?? '';
+
+  const ownerUid=prompt(
+    'UID właściciela szkoły:',
+    ''
+  );
+
+  if(ownerUid===null)return;
+
+  const cleanOwnerUid=ownerUid.trim();
+  if(!cleanOwnerUid){
+    toast('UID właściciela jest wymagany.');
+    return;
+  }
+
+  if(!confirm(
+    `Utworzyć szkołę "${cleanName}"?\n\n`+
+    `Właściciel UID: ${cleanOwnerUid}`
+  )){
+    return;
+  }
+
+  WolfConsole.createSchool(
+    cleanName,
+    city.trim(),
+    type.trim(),
+    schoolYear.trim(),
+    cleanOwnerUid
+  );
+}
+
+function deleteSchoolFromConsole(id){
+  if(systemRole!=='creator'){
+    toast('Tylko creator może usuwać szkoły.');
+    return;
+  }
+
+  const s=schools.find(x=>x.id===id);
+  if(!s)return;
+
+  if(
+    typeof WolfConsole.deleteSchool!=='function'
+  ){
+    toast('Ta wersja ConsoleBridge nie obsługuje usuwania szkół.');
+    return;
+  }
+
+  if(!confirm(
+    `UWAGA\n\nUsunąć szkołę "${s.name||'Szkoła'}"?\n\n`+
+    `Zostaną usunięte dane szkoły, członkowie, uczniowie, rodzice, `+
+    `nauczyciele, klasy, plan, oceny, zadania i pozostałe dane.`
+  )){
+    return;
+  }
+
+  const check=prompt(
+    `Aby potwierdzić trwałe usunięcie, wpisz dokładnie ID szkoły:\n${id}`,
+    ''
+  );
+
+  if(check===null)return;
+
+  if(check.trim()!==id){
+    toast('ID szkoły nie zgadza się. Anulowano usuwanie.');
+    return;
+  }
+
+  WolfConsole.deleteSchool(id);
 }
 
 function changeSchoolSystemStatus(id,status){

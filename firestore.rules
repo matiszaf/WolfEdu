@@ -117,8 +117,39 @@ service cloud.firestore {
     // =========================================================
 
     match /users/{uid} {
-      allow read, create, update:
-        if signedIn() && request.auth.uid == uid;
+
+      // Użytkownik może czytać własny profil.
+      // Creator może odczytać konkretny profil podczas
+      // bezpiecznego usuwania szkoły.
+      allow get:
+        if signedIn()
+        && (
+          request.auth.uid == uid
+          || isSystemCreator()
+        );
+
+      allow list: if false;
+
+      allow create:
+        if signedIn()
+        && request.auth.uid == uid;
+
+      // Użytkownik zarządza własnym profilem.
+      // Creator może zmienić wyłącznie activeSchoolId,
+      // np. przy usunięciu szkoły.
+      allow update:
+        if signedIn()
+        && (
+          request.auth.uid == uid
+          ||
+          (
+            isSystemCreator()
+            && request.resource.data
+                 .diff(resource.data)
+                 .affectedKeys()
+                 .hasOnly(['activeSchoolId'])
+          )
+        );
 
       allow delete: if false;
     }
@@ -130,9 +161,9 @@ service cloud.firestore {
 
     match /schools/{schoolId} {
 
+      // Szkoły może tworzyć wyłącznie creator przez WolfEdu Console.
       allow create:
-        if signedIn()
-        && request.resource.data.ownerUid == request.auth.uid;
+        if isSystemCreator();
 
       // Członkowie widzą swoją szkołę.
       // System Admin / Creator widzi wszystkie szkoły.
@@ -155,9 +186,10 @@ service cloud.firestore {
         if isAdmin(schoolId)
         || isSystemAdmin();
 
-      // Na razie Console NIE może usuwać szkół.
+      // Trwałe usunięcie szkoły jest operacją systemową
+      // dostępną wyłącznie dla roli creator.
       allow delete:
-        if isAdmin(schoolId);
+        if isSystemCreator();
 
 
       // =======================================================
@@ -234,11 +266,14 @@ service cloud.firestore {
         // Właściciel szkoły jest chroniony przed przypadkowym
         // usunięciem/degradacją przez szkolnego admina.
         allow update, delete:
-          if (
-            isAdmin(schoolId)
-            || isSystemAdmin()
-          )
-          && uid != schoolDoc(schoolId).data.ownerUid;
+          if isSystemCreator()
+          || (
+            (
+              isAdmin(schoolId)
+              || isSystemAdmin()
+            )
+            && uid != schoolDoc(schoolId).data.ownerUid
+          );
       }
 
 
