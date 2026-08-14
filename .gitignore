@@ -5,3 +5,7 @@ app/build/
 .wolfedu-package-backup-*/
 migrate-package.sh
 .wolfedu-update-backup-*/
+
+# Signing keys
+*.keystore
+*.jks
