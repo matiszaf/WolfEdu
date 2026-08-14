@@ -9,3 +9,8 @@ migrate-package.sh
 # Signing keys
 *.keystore
 *.jks
+.github/workflows/*.bak
+.github/workflows/*.before-*
+console-2.0.11/
+console-test-apk/
+console/app/src/main/AndroidManifest.xml.before-*
