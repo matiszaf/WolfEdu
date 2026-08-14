@@ -37,6 +37,7 @@ public final class FirebaseSyncBridge {
     private ListenerRegistration subjectsListener;
     private ListenerRegistration teachersListener;
     private ListenerRegistration studentsListener;
+    private ListenerRegistration parentsListener;
     private ListenerRegistration gradesListener;
     private ListenerRegistration tasksListener;
     private ListenerRegistration attendanceListener;
@@ -49,12 +50,15 @@ public final class FirebaseSyncBridge {
     private String activeSchoolId = "";
     private String activeSchoolName = "";
     private String activeRole = "";
+    private String activePersonType = "";
+    private String activePersonId = "";
     private String activeSchoolSystemStatus = "active";
     private String activeSchoolSystemStatusReason = "";
     private JSONArray schoolClasses = new JSONArray();
     private JSONArray schoolSubjects = new JSONArray();
     private JSONArray schoolTeachers = new JSONArray();
     private JSONArray schoolStudents = new JSONArray();
+    private JSONArray schoolParents = new JSONArray();
     private JSONArray schoolGrades = new JSONArray();
     private JSONArray schoolTasks = new JSONArray();
     private JSONArray schoolAttendance = new JSONArray();
@@ -233,15 +237,132 @@ public final class FirebaseSyncBridge {
     public void addCloudStudent(String name, String classId, String number, String email) {
         FirebaseUser user = auth.getCurrentUser();
         if (user == null || !hasActiveSchool() || name == null || name.trim().isEmpty()) return;
+
+        String cleanEmail = email == null ? "" : email.trim();
+
         Map<String, Object> payload = auditPayload(user);
         payload.put("name", name.trim());
         payload.put("classId", classId == null ? "" : classId);
         payload.put("number", number == null ? "" : number.trim());
-        payload.put("email", email == null ? "" : email.trim());
+        payload.put("email", cleanEmail);
         payload.put("createdAt", FieldValue.serverTimestamp());
         payload.put("createdBy", user.getUid());
-        firestore.collection("schools").document(activeSchoolId).collection("students").add(payload)
-                .addOnFailureListener(error -> emitSchoolError(friendly(error.getMessage())));
+
+        firestore.collection("schools")
+                .document(activeSchoolId)
+                .collection("students")
+                .add(payload)
+                .addOnSuccessListener(ref -> {
+                    if (!cleanEmail.isBlank()) {
+                        inviteLinkedSchoolMember(
+                                cleanEmail,
+                                "student",
+                                "student",
+                                ref.getId()
+                        );
+                    }
+                })
+                .addOnFailureListener(error ->
+                        emitSchoolError(friendly(error.getMessage())));
+    }
+
+    @JavascriptInterface
+    public void addCloudStudentWithParent(
+            String name,
+            String classId,
+            String number,
+            String email,
+            String parentName,
+            String parentEmail,
+            String parentPhone
+    ) {
+        FirebaseUser user = auth.getCurrentUser();
+
+        if (user == null || !hasActiveSchool()
+                || name == null || name.trim().isEmpty()) {
+            return;
+        }
+
+        String cleanStudentEmail = email == null ? "" : email.trim();
+        String cleanParentName = parentName == null ? "" : parentName.trim();
+        String cleanParentEmail = parentEmail == null ? "" : parentEmail.trim();
+        String cleanParentPhone = parentPhone == null ? "" : parentPhone.trim();
+
+        Map<String, Object> student = auditPayload(user);
+        student.put("name", name.trim());
+        student.put("classId", classId == null ? "" : classId);
+        student.put("number", number == null ? "" : number.trim());
+        student.put("email", cleanStudentEmail);
+        student.put("createdAt", FieldValue.serverTimestamp());
+        student.put("createdBy", user.getUid());
+
+        firestore.collection("schools")
+                .document(activeSchoolId)
+                .collection("students")
+                .add(student)
+                .addOnSuccessListener(studentRef -> {
+                    String studentId = studentRef.getId();
+
+                    if (!cleanStudentEmail.isBlank()) {
+                        inviteLinkedSchoolMember(
+                                cleanStudentEmail,
+                                "student",
+                                "student",
+                                studentId
+                        );
+                    }
+
+                    // Brak danych rodzica = kończymy na samym uczniu.
+                    if (cleanParentName.isBlank()
+                            && cleanParentEmail.isBlank()
+                            && cleanParentPhone.isBlank()) {
+                        return;
+                    }
+
+                    Map<String, Object> parent = auditPayload(user);
+                    parent.put("name", cleanParentName);
+                    parent.put("email", cleanParentEmail);
+                    parent.put("phone", cleanParentPhone);
+
+                    java.util.List<String> studentIds =
+                            new java.util.ArrayList<>();
+                    studentIds.add(studentId);
+
+                    parent.put("studentIds", studentIds);
+                    parent.put("createdAt", FieldValue.serverTimestamp());
+                    parent.put("createdBy", user.getUid());
+
+                    firestore.collection("schools")
+                            .document(activeSchoolId)
+                            .collection("parents")
+                            .add(parent)
+                            .addOnSuccessListener(parentRef -> {
+                                Map<String, Object> link = new HashMap<>();
+                                link.put(
+                                        "parentIds",
+                                        FieldValue.arrayUnion(parentRef.getId())
+                                );
+
+                                studentRef.set(link, SetOptions.merge())
+                                        .addOnFailureListener(error ->
+                                                emitSchoolError(
+                                                        friendly(error.getMessage())
+                                                ));
+
+                                if (!cleanParentEmail.isBlank()) {
+                                    inviteLinkedSchoolMember(
+                                            cleanParentEmail,
+                                            "parent",
+                                            "parent",
+                                            parentRef.getId()
+                                    );
+                                }
+                            })
+                            .addOnFailureListener(error ->
+                                    emitSchoolError(friendly(error.getMessage())));
+                })
+                .addOnFailureListener(error ->
+                        emitSchoolError(friendly(error.getMessage())));
     }
 
     @JavascriptInterface
@@ -255,14 +376,32 @@ public final class FirebaseSyncBridge {
     public void addCloudTeacher(String name, String email, String title) {
         FirebaseUser user = auth.getCurrentUser();
         if (user == null || !hasActiveSchool() || name == null || name.trim().isEmpty()) return;
+
+        String cleanEmail = email == null ? "" : email.trim();
+
         Map<String, Object> payload = auditPayload(user);
         payload.put("name", name.trim());
-        payload.put("email", email == null ? "" : email.trim());
+        payload.put("email", cleanEmail);
         payload.put("title", title == null ? "" : title.trim());
         payload.put("createdAt", FieldValue.serverTimestamp());
         payload.put("createdBy", user.getUid());
-        firestore.collection("schools").document(activeSchoolId).collection("teachers").add(payload)
-                .addOnFailureListener(error -> emitSchoolError(friendly(error.getMessage())));
+
+        firestore.collection("schools")
+                .document(activeSchoolId)
+                .collection("teachers")
+                .add(payload)
+                .addOnSuccessListener(ref -> {
+                    if (!cleanEmail.isBlank()) {
+                        inviteLinkedSchoolMember(
+                                cleanEmail,
+                                "teacher",
+                                "teacher",
+                                ref.getId()
+                        );
+                    }
+                })
+                .addOnFailureListener(error ->
+                        emitSchoolError(friendly(error.getMessage())));
     }
 
     @JavascriptInterface
@@ -506,6 +645,47 @@ public final class FirebaseSyncBridge {
     }
 
     @JavascriptInterface
+    public void inviteLinkedSchoolMember(String email, String role, String personType, String personId) {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null || !hasActiveSchool() || !isAdminRole()) return;
+
+        String cleanEmail = email == null ? "" : email.trim();
+        String cleanRole = role == null ? "" : role.trim().toLowerCase();
+        String cleanPersonType = personType == null ? "" : personType.trim().toLowerCase();
+        String cleanPersonId = personId == null ? "" : personId.trim();
+
+        if (cleanEmail.isEmpty()) {
+            emitSchoolError("Wpisz poprawny e-mail.");
+            return;
+        }
+
+        if (!(cleanRole.equals("teacher") || cleanRole.equals("parent") || cleanRole.equals("student"))) {
+            emitSchoolError("Nieprawidłowa rola osoby.");
+            return;
+        }
+
+        if (!cleanPersonType.equals(cleanRole) || cleanPersonId.isEmpty()) {
+            emitSchoolError("Brak prawidłowego powiązania osoby.");
+            return;
+        }
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("schoolId", activeSchoolId);
+        payload.put("schoolName", activeSchoolName);
+        payload.put("email", cleanEmail);
+        payload.put("role", cleanRole);
+        payload.put("personType", cleanPersonType);
+        payload.put("personId", cleanPersonId);
+        payload.put("createdBy", user.getUid());
+        payload.put("createdAt", FieldValue.serverTimestamp());
+
+        firestore.collection("schoolInvites").add(payload)
+                .addOnSuccessListener(ref ->
+                        emitStatus("Zaproszenie wysłane", cleanEmail + " · " + cleanRole, "online"))
+                .addOnFailureListener(error -> emitSchoolError(friendly(error.getMessage())));
+    }
+
+    @JavascriptInterface
     public void cancelSchoolInvite(String inviteId) {
         if (!isAdminRole() || inviteId == null || inviteId.isBlank()) return;
         firestore.collection("schoolInvites").document(inviteId).delete()
@@ -533,6 +713,8 @@ public final class FirebaseSyncBridge {
 
             String schoolId = value(invite.getString("schoolId"));
             String role = value(invite.getString("role"));
+            String personType = value(invite.getString("personType"));
+            String personId = value(invite.getString("personId"));
             if (schoolId.isBlank() || role.isBlank()) {
                 emitSchoolError("Zaproszenie jest nieprawidłowe.");
                 return;
@@ -542,6 +724,8 @@ public final class FirebaseSyncBridge {
             member.put("uid", user.getUid());
             member.put("email", userEmail);
             member.put("role", role);
+            if (!personType.isBlank()) member.put("personType", personType);
+            if (!personId.isBlank()) member.put("personId", personId);
             member.put("inviteId", inviteId);
             member.put("joinedAt", FieldValue.serverTimestamp());
 
@@ -693,12 +877,15 @@ public final class FirebaseSyncBridge {
         stopActiveSchoolListeners();
         activeSchoolName = "";
         activeRole = "";
+        activePersonType = "";
+        activePersonId = "";
         activeSchoolSystemStatus = "active";
         activeSchoolSystemStatusReason = "";
         schoolClasses = new JSONArray();
         schoolSubjects = new JSONArray();
         schoolTeachers = new JSONArray();
         schoolStudents = new JSONArray();
+        schoolParents = new JSONArray();
         schoolGrades = new JSONArray();
         schoolTasks = new JSONArray();
         schoolAttendance = new JSONArray();
@@ -739,6 +926,9 @@ public final class FirebaseSyncBridge {
             if (error == null && snapshot != null && snapshot.exists()) {
                 String role = snapshot.getString("role");
                 if (role != null && !role.isBlank()) activeRole = role;
+
+                activePersonType = value(snapshot.getString("personType"));
+                activePersonId = value(snapshot.getString("personId"));
             }
             refreshAdminListeners(user, schoolRef);
             emitSchoolState();
@@ -774,11 +964,50 @@ public final class FirebaseSyncBridge {
                         o.put("email", value(doc.getString("email")));
                         o.put("classId", value(doc.getString("classId")));
                         o.put("number", value(doc.getString("number")));
+                        Object parentIds = doc.get("parentIds");
+                        o.put(
+                                "parentIds",
+                                parentIds == null
+                                        ? new JSONArray()
+                                        : new JSONArray((java.util.List<?>) parentIds)
+                        );
                     } catch (Exception ignored) {}
                     array.put(o);
                 }
             }
             schoolStudents = array;
+            emitSchoolState();
+        });
+
+        parentsListener = schoolRef.collection("parents").addSnapshotListener((snapshot, error) -> {
+            if (error != null) { emitSchoolError(friendly(error.getMessage())); return; }
+
+            JSONArray array = new JSONArray();
+
+            if (snapshot != null) {
+                for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                    JSONObject o = new JSONObject();
+
+                    try {
+                        o.put("id", doc.getId());
+                        o.put("name", value(doc.getString("name")));
+                        o.put("email", value(doc.getString("email")));
+                        o.put("phone", value(doc.getString("phone")));
+
+                        Object studentIds = doc.get("studentIds");
+                        o.put(
+                                "studentIds",
+                                studentIds == null
+                                        ? new JSONArray()
+                                        : new JSONArray((java.util.List<?>) studentIds)
+                        );
+                    } catch (Exception ignored) {}
+
+                    array.put(o);
+                }
+            }
+
+            schoolParents = array;
             emitSchoolState();
         });
 
@@ -876,7 +1105,7 @@ public final class FirebaseSyncBridge {
                         return;
                     }
                     myInvites = snapshotToJson(snapshot == null ? java.util.Collections.emptyList() : snapshot.getDocuments(),
-                            new String[]{"schoolId", "schoolName", "email", "role"});
+                            new String[]{"schoolId", "schoolName", "email", "role", "personType", "personId"});
                     emitSchoolState();
                 });
     }
@@ -893,7 +1122,7 @@ public final class FirebaseSyncBridge {
             membersDirectoryListener = schoolRef.collection("members").addSnapshotListener((snapshot, error) -> {
                 if (error != null) { emitSchoolError(friendly(error.getMessage())); return; }
                 schoolMembers = snapshotToJson(snapshot == null ? java.util.Collections.emptyList() : snapshot.getDocuments(),
-                        new String[]{"uid", "email", "role", "inviteId"});
+                        new String[]{"uid", "email", "role", "inviteId", "personType", "personId"});
                 emitSchoolState();
             });
         }
@@ -903,7 +1132,7 @@ public final class FirebaseSyncBridge {
                     .addSnapshotListener((snapshot, error) -> {
                         if (error != null) { emitSchoolError(friendly(error.getMessage())); return; }
                         schoolInvites = snapshotToJson(snapshot == null ? java.util.Collections.emptyList() : snapshot.getDocuments(),
-                                new String[]{"schoolId", "schoolName", "email", "role"});
+                                new String[]{"schoolId", "schoolName", "email", "role", "personType", "personId"});
                         emitSchoolState();
                     });
         }
@@ -942,6 +1171,8 @@ public final class FirebaseSyncBridge {
             payload.put("activeSchoolId", activeSchoolId);
             payload.put("schoolName", activeSchoolName);
             payload.put("role", activeRole);
+            payload.put("personType", activePersonType);
+            payload.put("personId", activePersonId);
             payload.put("systemStatus", activeSchoolSystemStatus);
             payload.put("systemStatusReason", activeSchoolSystemStatusReason);
             payload.put("schools", availableSchools);
@@ -949,6 +1180,7 @@ public final class FirebaseSyncBridge {
             payload.put("subjects", schoolSubjects);
             payload.put("teachers", schoolTeachers);
             payload.put("students", schoolStudents);
+            payload.put("parents", schoolParents);
             payload.put("grades", schoolGrades);
             payload.put("tasks", schoolTasks);
             payload.put("attendance", schoolAttendance);
@@ -973,9 +1205,9 @@ public final class FirebaseSyncBridge {
     }
 
     private void stopActiveSchoolListeners() {
-        ListenerRegistration[] regs = {schoolListener, memberListener, classesListener, subjectsListener, teachersListener, studentsListener, gradesListener, tasksListener, attendanceListener, timetableListener, lessonRecordsListener};
+        ListenerRegistration[] regs = {schoolListener, memberListener, classesListener, subjectsListener, teachersListener, studentsListener, gradesListener, tasksListener, attendanceListener, timetableListener, lessonRecordsListener, parentsListener};
         for (ListenerRegistration reg : regs) if (reg != null) reg.remove();
-        schoolListener = memberListener = classesListener = subjectsListener = teachersListener = studentsListener = gradesListener = tasksListener = attendanceListener = timetableListener = lessonRecordsListener = null;
+        schoolListener = memberListener = classesListener = subjectsListener = teachersListener = studentsListener = gradesListener = tasksListener = attendanceListener = timetableListener = lessonRecordsListener = parentsListener = null;
         stopAdminListeners();
     }
 
@@ -990,6 +1222,8 @@ public final class FirebaseSyncBridge {
         activeSchoolId = "";
         activeSchoolName = "";
         activeRole = "";
+        activePersonType = "";
+        activePersonId = "";
         activeSchoolSystemStatus = "active";
         activeSchoolSystemStatusReason = "";
         availableSchools = new JSONArray();

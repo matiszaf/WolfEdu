@@ -330,10 +330,20 @@ function currentTeacherRecord(){
     return null;
   }
 
+  const teachers=wolfSchool.teachers||[];
+  const personType=String(wolfSchool?.personType||'').toLowerCase();
+  const personId=String(wolfSchool?.personId||'');
+
+  if(personType==='teacher' && personId){
+    const linked=teachers.find(t=>String(t.id||'')===personId);
+    if(linked)return linked;
+  }
+
+  // Fallback dla istniejących kont utworzonych przed systemem personId.
   const email=String(syncEmail||'').trim().toLowerCase();
   if(!email)return null;
 
-  return (wolfSchool.teachers||[]).find(t=>
+  return teachers.find(t=>
     String(t.email||'').trim().toLowerCase()===email
   )||null;
 }

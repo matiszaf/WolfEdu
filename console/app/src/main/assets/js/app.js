@@ -86,6 +86,7 @@ window.consoleAuth=(ok,e,role)=>{
 
   try{WolfConsole.requestEnvironment()}catch(e){}
   try{refreshConsoleSelfUpdate()}catch(e){}
+  try{startConsoleSelfUpdateWatcher()}catch(e){}
   render(currentPage);
 };
 
@@ -150,6 +151,8 @@ function consoleSelfUpdateAvailable(){
   )>0;
 }
 
+let consoleSelfUpdateTimer=null;
+
 function refreshConsoleSelfUpdate(){
   try{
     WolfConsole.requestConsoleUpdateInfo();
@@ -157,6 +160,22 @@ function refreshConsoleSelfUpdate(){
     consoleSelfUpdateError='Nie udało się uruchomić sprawdzania aktualizacji Console.';
   }
 }
+
+function startConsoleSelfUpdateWatcher(){
+  if(consoleSelfUpdateTimer)return;
+
+  consoleSelfUpdateTimer=setInterval(()=>{
+    if(authenticated){
+      refreshConsoleSelfUpdate();
+    }
+  },120000);
+}
+
+document.addEventListener('visibilitychange',()=>{
+  if(!document.hidden && authenticated){
+    refreshConsoleSelfUpdate();
+  }
+});
 
 window.consoleReleaseInfo=x=>{
   releaseInfo=x||null;

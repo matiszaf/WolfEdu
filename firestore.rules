@@ -69,6 +69,33 @@ service cloud.firestore {
     }
 
 
+    function linkedPersonExists(schoolId, personType, personId) {
+      return personType is string
+             && personId is string
+             && (
+               (
+                 personType == 'teacher'
+                 && exists(
+                   /databases/$(database)/documents/schools/$(schoolId)/teachers/$(personId)
+                 )
+               )
+               ||
+               (
+                 personType == 'student'
+                 && exists(
+                   /databases/$(database)/documents/schools/$(schoolId)/students/$(personId)
+                 )
+               )
+               ||
+               (
+                 personType == 'parent'
+                 && exists(
+                   /databases/$(database)/documents/schools/$(schoolId)/parents/$(personId)
+                 )
+               )
+             );
+    }
+
     function isSystemAdmin() {
       return signedIn()
              && exists(
@@ -174,6 +201,34 @@ service cloud.firestore {
             && get(
               /databases/$(database)/documents/schoolInvites/$(request.resource.data.inviteId)
             ).data.role == request.resource.data.role
+
+            && (
+              (
+                request.resource.data.role in ['admin','director']
+                && !('personType' in request.resource.data)
+                && !('personId' in request.resource.data)
+              )
+              ||
+              (
+                request.resource.data.role in ['teacher','student','parent']
+
+                && get(
+                  /databases/$(database)/documents/schoolInvites/$(request.resource.data.inviteId)
+                ).data.personType == request.resource.data.personType
+
+                && get(
+                  /databases/$(database)/documents/schoolInvites/$(request.resource.data.inviteId)
+                ).data.personId == request.resource.data.personId
+
+                && request.resource.data.personType == request.resource.data.role
+
+                && linkedPersonExists(
+                  schoolId,
+                  request.resource.data.personType,
+                  request.resource.data.personId
+                )
+              )
+            )
           );
 
         // Właściciel szkoły jest chroniony przed przypadkowym
@@ -207,6 +262,21 @@ service cloud.firestore {
       // =======================================================
 
       match /students/{docId} {
+        allow read:
+          if isMember(schoolId)
+          || isSystemAdmin();
+
+        allow write:
+          if isAdmin(schoolId)
+          || isSystemAdmin();
+      }
+
+
+      // =======================================================
+      // PARENTS
+      // =======================================================
+
+      match /parents/{docId} {
         allow read:
           if isMember(schoolId)
           || isSystemAdmin();
@@ -576,7 +646,25 @@ service cloud.firestore {
           'teacher',
           'parent',
           'student'
-        ];
+        ]
+
+        && (
+          (
+            request.resource.data.role in ['admin','director']
+            && !('personType' in request.resource.data)
+            && !('personId' in request.resource.data)
+          )
+          ||
+          (
+            request.resource.data.role in ['teacher','parent','student']
+            && request.resource.data.personType == request.resource.data.role
+            && linkedPersonExists(
+              request.resource.data.schoolId,
+              request.resource.data.personType,
+              request.resource.data.personId
+            )
+          )
+        );
 
       allow read:
         if signedIn()
