@@ -5,7 +5,7 @@ function adminGuard(title){
     return false;
   }
   if(!wolfSchool.activeSchoolId && title!=='Szkoła'){
-    app.innerHTML='<div class="card warn"><b>Brak aktywnej szkoły.</b><br>Utwórz lub wybierz szkołę w sekcji Szkoła.</div>';
+    app.innerHTML='<div class="card warn"><b>Brak aktywnej szkoły.</b><br>Wybierz szkołę lub zaakceptuj zaproszenie do szkoły.</div>';
     return false;
   }
   return true;
@@ -14,23 +14,32 @@ function adminGuard(title){
 function schoolPage(){
   if(!adminGuard('Szkoła'))return;
   const schools=wolfSchool.schools||[];
+
   app.innerHTML=`
     <div class="card">
       <div class="row between">
-        <div><h2 style="margin:0">${esc(wolfSchool.schoolName||'WolfEdu')}</h2><small>Rola: ${esc(roleLabel())}</small></div>
+        <div>
+          <h2 style="margin:0">${esc(wolfSchool.schoolName||'WolfEdu')}</h2>
+          <small>Rola: ${esc(roleLabel())}</small>
+        </div>
         <span class="badge">${esc(wolfSchool.role||'—')}</span>
       </div>
-      ${schools.length?`<select onchange="changeActiveSchool(this.value)">${schools.map(s=>`<option value="${esc(s.id)}" ${s.id===wolfSchool.activeSchoolId?'selected':''}>${esc(s.name||'Szkoła')}</option>`).join('')}</select>`:''}
-    </div>
-    <div class="card"><h2>Utwórz szkołę</h2>
-      <input id="csName" placeholder="Nazwa szkoły">
-      <input id="csCity" placeholder="Miejscowość">
-      <select id="csType"><option>Szkoła podstawowa</option><option>Liceum</option><option>Technikum</option><option>Szkoła branżowa</option><option>Inna</option></select>
-      <input id="csYear" placeholder="Rok szkolny, np. 2026/2027">
-      <button style="width:100%" onclick="createCloudSchoolMobile(this)">Utwórz szkołę</button>
-      <div class="sync-note">Tak samo jak w panelu WWW: każde zalogowane konto może utworzyć własną szkołę i automatycznie zostaje jej właścicielem.</div>
+
+      ${schools.length
+        ? `<select onchange="changeActiveSchool(this.value)">
+            ${schools.map(s=>`
+              <option value="${esc(s.id)}" ${s.id===wolfSchool.activeSchoolId?'selected':''}>
+                ${esc(s.name||'Szkoła')}
+              </option>
+            `).join('')}
+          </select>`
+        : `<div class="sync-note">
+            Nie masz obecnie dostępnej szkoły. Do szkoły możesz dołączyć przez zaproszenie.
+          </div>`
+      }
     </div>`;
 }
+
 function createCloudSchoolMobile(btn){
   const name=$('#csName').value.trim();
   if(!name)return toast('Wpisz nazwę szkoły');
