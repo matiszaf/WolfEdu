@@ -49,6 +49,17 @@ service cloud.firestore {
     }
 
 
+    function isStudent(schoolId) {
+      return signedIn()
+             && exists(
+               /databases/$(database)/documents/schools/$(schoolId)/members/$(request.auth.uid)
+             )
+             && memberDoc(schoolId).data.role == 'student'
+             && memberDoc(schoolId).data.personType == 'student'
+             && memberDoc(schoolId).data.personId is string;
+    }
+
+
     function isTeacher(schoolId) {
       return signedIn()
              && exists(
@@ -599,6 +610,18 @@ service cloud.firestore {
               schoolId,
               resource.data.teacherId
             )
+          )
+          || (
+            isStudent(schoolId)
+            && memberDoc(schoolId).data.personId == resource.data.studentId
+            && request.resource.data.studentId == resource.data.studentId
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'done',
+              'updatedBy',
+              'updatedAt',
+              'version'
+            ])
+            && request.resource.data.updatedBy == request.auth.uid
           );
 
         allow delete:

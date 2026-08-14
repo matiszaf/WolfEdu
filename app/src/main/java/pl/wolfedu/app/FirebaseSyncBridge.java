@@ -1266,7 +1266,7 @@ public final class FirebaseSyncBridge {
             String personType = value(activePersonType).trim().toLowerCase();
             String personId = value(activePersonId).trim();
 
-            boolean ownerOrAdmin = "owner".equals(role) || "admin".equals(role);
+            boolean ownerOrAdmin = "owner".equals(role) || "admin".equals(role) || "director".equals(role);
             boolean teacher = "teacher".equals(role);
             boolean student = "student".equals(role);
             boolean parent = "parent".equals(role);
