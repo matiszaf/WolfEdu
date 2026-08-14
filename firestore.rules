@@ -132,7 +132,15 @@ service cloud.firestore {
 
       allow create:
         if signedIn()
-        && request.auth.uid == uid;
+        && (
+          request.auth.uid == uid
+          ||
+          (
+            isSystemCreator()
+            && request.resource.data.keys().hasOnly(['activeSchoolId'])
+            && request.resource.data.activeSchoolId is string
+          )
+        );
 
       // Użytkownik zarządza własnym profilem.
       // Creator może zmienić wyłącznie activeSchoolId,

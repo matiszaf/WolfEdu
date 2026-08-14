@@ -293,6 +293,10 @@ public class ConsoleBridge {
                 schoolRef.collection("members")
                         .document(cleanOwnerUid);
 
+        DocumentReference ownerUserRef =
+                db.collection("users")
+                        .document(cleanOwnerUid);
+
         Map<String, Object> member = new HashMap<>();
         member.put("uid", cleanOwnerUid);
         member.put("role", "owner");
@@ -302,8 +306,12 @@ public class ConsoleBridge {
         com.google.firebase.firestore.WriteBatch batch =
                 db.batch();
 
+        Map<String, Object> ownerProfile = new HashMap<>();
+        ownerProfile.put("activeSchoolId", schoolRef.getId());
+
         batch.set(schoolRef, payload);
         batch.set(ownerMemberRef, member);
+        batch.set(ownerUserRef, ownerProfile, SetOptions.merge());
 
         batch.commit()
                 .addOnSuccessListener(done ->
