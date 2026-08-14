@@ -3,8 +3,7 @@ name: WolfEdu Console Release Queue
 on:
   workflow_dispatch:
   schedule:
-    - cron: "2-59/5 * * * *"
-
+    - cron: "*/2 * * * *"
 permissions:
   contents: read
   actions: write
