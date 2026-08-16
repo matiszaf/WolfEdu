@@ -387,10 +387,232 @@ service cloud.firestore {
 
 
       // =======================================================
+      // LESSON CHANGES
+      // =======================================================
+
+      match /lessonChanges/{docId} {
+        allow read:
+          if isMember(schoolId)
+          || isSystemAdmin();
+
+        allow create, update, delete:
+          if isAdmin(schoolId)
+          || isSystemAdmin();
+      }
+
+
+      // =======================================================
       // LESSON RECORDS
       // =======================================================
 
       match /lessonRecords/{docId} {
+        allow read:
+          if isMember(schoolId)
+          || isSystemAdmin();
+
+        allow create:
+          if isAdmin(schoolId)
+          || isSystemAdmin()
+          || (
+            isTeacher(schoolId)
+
+            && request.resource.data.keys().hasOnly([
+              'sourceType',
+              'sourceId',
+              'timetableId',
+              'date',
+              'classId',
+              'subjectId',
+              'teacherId',
+              'teacherUid',
+              'lesson',
+              'topic',
+              'createdAt',
+              'createdBy',
+              'updatedAt',
+              'updatedBy'
+            ])
+
+            && request.resource.data.sourceType is string
+            && request.resource.data.sourceId is string
+            && request.resource.data.sourceId.size() > 0
+
+            && (
+              request.resource.data.sourceType == 'timetable'
+              || request.resource.data.sourceType == 'lessonChange'
+            )
+
+            && request.resource.data.timetableId is string
+            && request.resource.data.date is string
+            && request.resource.data.classId is string
+            && request.resource.data.subjectId is string
+            && request.resource.data.teacherId is string
+            && request.resource.data.teacherUid == request.auth.uid
+            && request.resource.data.lesson is int
+            && request.resource.data.topic is string
+            && request.resource.data.topic.size() > 0
+            && request.resource.data.topic.size() <= 500
+
+            && request.resource.data.createdBy == request.auth.uid
+            && request.resource.data.updatedBy == request.auth.uid
+
+            && (
+              (
+                request.resource.data.sourceType == 'timetable'
+
+                && request.resource.data.sourceId == request.resource.data.timetableId
+
+                && exists(
+                  /databases/$(database)/documents/schools/$(schoolId)/timetable/$(request.resource.data.sourceId)
+                )
+
+                && get(
+                  /databases/$(database)/documents/schools/$(schoolId)/timetable/$(request.resource.data.sourceId)
+                ).data.teacherId == request.resource.data.teacherId
+
+                && get(
+                  /databases/$(database)/documents/schools/$(schoolId)/timetable/$(request.resource.data.sourceId)
+                ).data.classId == request.resource.data.classId
+
+                && get(
+                  /databases/$(database)/documents/schools/$(schoolId)/timetable/$(request.resource.data.sourceId)
+                ).data.subjectId == request.resource.data.subjectId
+
+                && get(
+                  /databases/$(database)/documents/schools/$(schoolId)/timetable/$(request.resource.data.sourceId)
+                ).data.lesson == request.resource.data.lesson
+              )
+
+              ||
+
+              (
+                request.resource.data.sourceType == 'lessonChange'
+
+                && exists(
+                  /databases/$(database)/documents/schools/$(schoolId)/lessonChanges/$(request.resource.data.sourceId)
+                )
+
+                && get(
+                  /databases/$(database)/documents/schools/$(schoolId)/lessonChanges/$(request.resource.data.sourceId)
+                ).data.date == request.resource.data.date
+
+                && get(
+                  /databases/$(database)/documents/schools/$(schoolId)/lessonChanges/$(request.resource.data.sourceId)
+                ).data.classId == request.resource.data.classId
+
+                && get(
+                  /databases/$(database)/documents/schools/$(schoolId)/lessonChanges/$(request.resource.data.sourceId)
+                ).data.lesson == request.resource.data.lesson
+
+                && get(
+                  /databases/$(database)/documents/schools/$(schoolId)/lessonChanges/$(request.resource.data.sourceId)
+                ).data.type != 'cancelled'
+
+                && (
+                  get(
+                    /databases/$(database)/documents/schools/$(schoolId)/lessonChanges/$(request.resource.data.sourceId)
+                  ).data.teacherId == request.resource.data.teacherId
+                  ||
+                  (
+                    get(
+                      /databases/$(database)/documents/schools/$(schoolId)/lessonChanges/$(request.resource.data.sourceId)
+                    ).data.teacherId == ''
+                    &&
+                    request.resource.data.timetableId != ''
+                    &&
+                    exists(
+                      /databases/$(database)/documents/schools/$(schoolId)/timetable/$(request.resource.data.timetableId)
+                    )
+                    &&
+                    get(
+                      /databases/$(database)/documents/schools/$(schoolId)/timetable/$(request.resource.data.timetableId)
+                    ).data.teacherId == request.resource.data.teacherId
+                  )
+                )
+
+                && (
+                  get(
+                    /databases/$(database)/documents/schools/$(schoolId)/lessonChanges/$(request.resource.data.sourceId)
+                  ).data.subjectId == request.resource.data.subjectId
+                  ||
+                  (
+                    get(
+                      /databases/$(database)/documents/schools/$(schoolId)/lessonChanges/$(request.resource.data.sourceId)
+                    ).data.subjectId == ''
+                    &&
+                    request.resource.data.timetableId != ''
+                    &&
+                    exists(
+                      /databases/$(database)/documents/schools/$(schoolId)/timetable/$(request.resource.data.timetableId)
+                    )
+                    &&
+                    get(
+                      /databases/$(database)/documents/schools/$(schoolId)/timetable/$(request.resource.data.timetableId)
+                    ).data.subjectId == request.resource.data.subjectId
+                  )
+                )
+              )
+            )
+
+            && isAssignedTeacher(
+              schoolId,
+              request.resource.data.teacherId
+            )
+          );
+
+        allow update:
+          if isAdmin(schoolId)
+          || isSystemAdmin()
+          || (
+            isTeacher(schoolId)
+
+            && request.resource.data.keys().hasOnly([
+              'sourceType',
+              'sourceId',
+              'timetableId',
+              'date',
+              'classId',
+              'subjectId',
+              'teacherId',
+              'teacherUid',
+              'lesson',
+              'topic',
+              'createdAt',
+              'createdBy',
+              'updatedAt',
+              'updatedBy'
+            ])
+
+            && resource.data.teacherUid == request.auth.uid
+            && request.resource.data.teacherUid == request.auth.uid
+
+            && request.resource.data.sourceType == resource.data.sourceType
+            && request.resource.data.sourceId == resource.data.sourceId
+            && request.resource.data.timetableId == resource.data.timetableId
+            && request.resource.data.teacherId == resource.data.teacherId
+            && request.resource.data.classId == resource.data.classId
+            && request.resource.data.subjectId == resource.data.subjectId
+            && request.resource.data.date == resource.data.date
+            && request.resource.data.lesson == resource.data.lesson
+
+            && request.resource.data.createdBy == resource.data.createdBy
+            && request.resource.data.createdAt == resource.data.createdAt
+            && request.resource.data.updatedBy == request.auth.uid
+
+            && request.resource.data.topic is string
+            && request.resource.data.topic.size() > 0
+            && request.resource.data.topic.size() <= 500
+
+            && isAssignedTeacher(
+              schoolId,
+              resource.data.teacherId
+            )
+          );
+
+        allow delete:
+          if isAdmin(schoolId)
+          || isSystemAdmin();
+      } {
         allow read:
           if isMember(schoolId)
           || isSystemAdmin();

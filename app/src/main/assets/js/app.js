@@ -166,6 +166,7 @@ function render(p=page){
     tasks,
     attendance,
     plan,
+    realizedLessons,
     settings
   }[page]||home)();
 }
@@ -240,6 +241,12 @@ function learning(){
           <span class="hub-icon">▦</span>
           <b>Plan lekcji</b>
           <small>Plan i godziny zajęć</small>
+        </button>
+
+        <button class="hub-tile" onclick="render('realizedLessons')">
+          <span class="hub-icon">☰</span>
+          <b>Zrealizowane lekcje</b>
+          <small>Tematy przeprowadzonych zajęć</small>
         </button>
       </div>
     </section>`;

@@ -399,76 +399,277 @@ function attendanceGroupedHtml(list,classes,students,subjects,teachers,cloud){
     </section>`).join('');
 }
 
-function cloudAttendanceForm(classes,students,subjects,teachers){
-  const teacherLocked=String(wolfSchool?.role||'').toLowerCase()==='teacher';
-  const ownTeacher=teacherLocked?currentTeacherRecord():null;
 
-  return `<details class="attendance-add-card">
+function attendanceDateDay(date){
+  const d=new Date(String(date||'')+'T12:00:00');
+  if(Number.isNaN(d.getTime()))return 0;
+
+  // JS: niedziela 0; plan WolfEdu: poniedziałek 1 ... niedziela 7
+  const day=d.getDay();
+  return day===0?7:day;
+}
+
+function attendanceActualLessonsForDate(date,classes){
+  const day=attendanceDateDay(date);
+  if(!day)return [];
+
+  const teacherLocked=String(wolfSchool?.role||'').toLowerCase()==='teacher';
+  const ownTeacherId=teacherLocked?teachingTeacherId():'';
+
+  const result=[];
+
+  (classes||[]).forEach(klass=>{
+    const classId=klass.id;
+
+    const changes=(wolfSchool.lessonChanges||[]).filter(c=>
+      c.classId===classId &&
+      c.date===date
+    );
+
+    const base=(wolfSchool.timetable||[])
+      .filter(l=>
+        l.classId===classId &&
+        Number(l.day)===Number(day) &&
+        (
+          typeof planLessonAppliesToDate!=='function' ||
+          planLessonAppliesToDate(l,date)
+        )
+      )
+      .map(l=>{
+        const change=changes.find(c=>
+          String(c.type||'').toLowerCase()!=='added' &&
+          Number(c.lesson)===Number(l.lesson)
+        );
+
+        return typeof planApplyChange==='function'
+          ? planApplyChange(l,change)
+          : {...l};
+      });
+
+    const added=changes
+      .filter(c=>String(c.type||'').toLowerCase()==='added')
+      .map(c=>typeof planAddedLesson==='function'
+        ? planAddedLesson(c,day)
+        : {
+            id:'change:'+String(c.id||''),
+            classId:c.classId||'',
+            day,
+            lesson:Number(c.lesson||0),
+            subjectId:c.subjectId||'',
+            teacherId:c.teacherId||'',
+            room:c.room||'',
+            start:c.start||'',
+            end:c.end||'',
+            _changeId:c.id||'',
+            _changeType:'added',
+            _added:true
+          });
+
+    [...base,...added]
+      .filter(l=>!l._cancelled)
+      .filter(l=>!teacherLocked || (ownTeacherId && l.teacherId===ownTeacherId))
+      .forEach(l=>result.push({
+        ...l,
+        _className:klass.name||'Klasa'
+      }));
+  });
+
+  return result.sort((a,b)=>{
+    const aStart=String(a.start||'');
+    const bStart=String(b.start||'');
+
+    if(aStart&&bStart&&aStart!==bStart)
+      return aStart.localeCompare(bStart);
+
+    const classCmp=String(a._className||'').localeCompare(String(b._className||''));
+    if(classCmp!==0)return classCmp;
+
+    return Number(a.lesson||99)-Number(b.lesson||99);
+  });
+}
+
+function attendanceLessonKey(lesson){
+  return [
+    lesson.classId||'',
+    Number(lesson.lesson||0),
+    lesson.subjectId||'',
+    lesson.teacherId||''
+  ].join('|');
+}
+
+function attendanceLessonOptionLabel(l){
+  const subject=typeof planSubject==='function'
+    ? planSubject(l)
+    : ((wolfSchool.subjects||[]).find(s=>s.id===l.subjectId)?.name||'Lekcja');
+
+  const time=l.start
+    ? `${l.start}${l.end?'–'+l.end:''}`
+    : `lekcja ${l.lesson}`;
+
+  const change=l._changeType==='substitution'
+    ? ' · zastępstwo'
+    : l._changeType==='added'
+      ? ' · dodatkowa'
+      : l._changeType==='roomchange'
+        ? ' · zmiana sali'
+        : '';
+
+  return `${l._className} · ${l.lesson}. ${subject} · ${time}${change}`;
+}
+
+function attendanceSelectedLesson(){
+  const date=$('#caDate')?.value||'';
+  const key=$('#caLessonSession')?.value||'';
+
+  return attendanceActualLessonsForDate(
+    date,
+    wolfSchool.classes||[]
+  ).find(l=>attendanceLessonKey(l)===key)||null;
+}
+
+function refreshCloudAttendanceLessons(){
+  const date=$('#caDate')?.value||'';
+  const select=$('#caLessonSession');
+  const body=$('#caLessonStudents');
+
+  if(!select||!body)return;
+
+  const lessons=attendanceActualLessonsForDate(
+    date,
+    wolfSchool.classes||[]
+  );
+
+  select.innerHTML=`
+    <option value="">Wybierz lekcję</option>
+    ${lessons.map(l=>`
+      <option value="${esc(attendanceLessonKey(l))}">
+        ${esc(attendanceLessonOptionLabel(l))}
+      </option>
+    `).join('')}
+  `;
+
+  body.innerHTML=lessons.length
+    ? '<div class="sync-note">Wybierz lekcję, aby wyświetlić listę uczniów.</div>'
+    : '<div class="sync-note">Brak lekcji do sprawdzenia frekwencji w tym dniu.</div>';
+}
+
+function refreshCloudAttendanceStudents(){
+  const lesson=attendanceSelectedLesson();
+  const body=$('#caLessonStudents');
+
+  if(!body)return;
+
+  if(!lesson){
+    body.innerHTML='<div class="sync-note">Wybierz lekcję.</div>';
+    return;
+  }
+
+  const date=$('#caDate')?.value||'';
+
+  const students=(wolfSchool.students||[])
+    .filter(s=>s.classId===lesson.classId)
+    .sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')));
+
+  if(!students.length){
+    body.innerHTML='<div class="sync-note">Brak uczniów przypisanych do tej klasy.</div>';
+    return;
+  }
+
+  const existing=wolfSchool.attendance||[];
+
+  body.innerHTML=`
+    <div class="attendance-lesson-selected">
+      <b>${esc(attendanceLessonOptionLabel(lesson))}</b>
+      ${lesson.room?`<small>Sala ${esc(lesson.room)}</small>`:''}
+    </div>
+
+    <div class="attendance-class-list">
+      ${students.map(student=>{
+        const entry=existing.find(a=>
+          a.studentId===student.id &&
+          a.classId===lesson.classId &&
+          a.date===date &&
+          Number(a.lesson)===Number(lesson.lesson)
+        );
+
+        const state=entry?.state||'Obecny';
+
+        return `
+          <div class="attendance-student-row"
+               data-student-id="${esc(student.id)}"
+               data-attendance-id="${esc(entry?.id||'')}">
+
+            <b>${esc(student.name||'Uczeń')}</b>
+
+            <select class="caStudentState">
+              ${[
+                'Obecny',
+                'Nieobecny',
+                'Spóźniony',
+                'Usprawiedliwiony',
+                'Zwolniony'
+              ].map(v=>`
+                <option ${v===state?'selected':''}>${v}</option>
+              `).join('')}
+            </select>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+function cloudAttendanceForm(classes,students,subjects,teachers){
+  const today=new Date().toISOString().slice(0,10);
+
+  return `<details class="attendance-add-card" open>
     <summary>
       <div>
-        <span class="attendance-add-icon">＋</span>
+        <span class="attendance-add-icon">✓</span>
         <div>
-          <b>Dodaj wpis</b>
-          <small>Nowa obecność w WolfCloud</small>
+          <b>Sprawdź frekwencję</b>
+          <small>Lista uczniów jest pobierana z planu lekcji</small>
         </div>
       </div>
       <span>Rozwiń</span>
     </summary>
 
     <div class="attendance-add-body">
-      <select id="caStudent">
-        <option value="">Uczeń</option>
-        ${students.map(s=>`
-          <option value="${esc(s.id)}">${esc(s.name||'Uczeń')}</option>
+
+      <label>Data</label>
+      <input
+        id="caDate"
+        type="date"
+        value="${today}"
+        onchange="refreshCloudAttendanceLessons()">
+
+      <label>Lekcja</label>
+      <select
+        id="caLessonSession"
+        onchange="refreshCloudAttendanceStudents()">
+        <option value="">Wybierz lekcję</option>
+
+        ${attendanceActualLessonsForDate(today,classes).map(l=>`
+          <option value="${esc(attendanceLessonKey(l))}">
+            ${esc(attendanceLessonOptionLabel(l))}
+          </option>
         `).join('')}
       </select>
 
-      <select id="caClass">
-        <option value="">Klasa</option>
-        ${classes.map(c=>`
-          <option value="${esc(c.id)}">${esc(c.name||'Klasa')}</option>
-        `).join('')}
-      </select>
-
-      <select id="caSubject">
-        <option value="">Przedmiot (opcjonalnie)</option>
-        ${subjects.map(s=>`
-          <option value="${esc(s.id)}">${esc(s.name||'Przedmiot')}</option>
-        `).join('')}
-      </select>
-
-      ${teacherLocked ? `
-        <div class="sync-note">
-          <b>Nauczyciel:</b>
-          ${esc(ownTeacher?.name||syncEmail||'Niepowiązane konto')}
-        </div>
-      ` : `<select id="caTeacher">
-        <option value="">Nauczyciel (opcjonalnie)</option>
-        ${teachers.map(t=>`
-          <option value="${esc(t.id)}">${esc(t.name||'Nauczyciel')}</option>
-        `).join('')}
-      </select>`}
-
-      <div class="attendance-form-grid">
-        <input id="caDate" type="date"
-          value="${new Date().toISOString().slice(0,10)}">
-
-        <input id="caLesson" type="number"
-          min="1" max="20" value="1"
-          placeholder="Lekcja">
+      <div id="caLessonStudents">
+        ${
+          attendanceActualLessonsForDate(today,classes).length
+            ? '<div class="sync-note">Wybierz lekcję, aby wyświetlić listę uczniów.</div>'
+            : '<div class="sync-note">Brak lekcji do sprawdzenia frekwencji w tym dniu.</div>'
+        }
       </div>
 
-      <select id="caState">
-        <option>Obecny</option>
-        <option>Nieobecny</option>
-        <option>Spóźniony</option>
-        <option>Usprawiedliwiony</option>
-        <option>Zwolniony</option>
-      </select>
-
-      <button class="btn-full" onclick="addCloudAttendance(this)">
-        Dodaj wpis
+      <button
+        class="btn-full"
+        onclick="saveCloudLessonAttendance(this)">
+        Zapisz frekwencję
       </button>
+
     </div>
   </details>`;
 }
@@ -609,33 +810,60 @@ function attendance(){
 }
 
 function addCloudAttendance(btn){
-  const teacherId=String(wolfSchool?.role||'').toLowerCase()==='teacher'
+  // Pozostawione jako zgodność ze starszym UI.
+  // Nowy formularz korzysta z saveCloudLessonAttendance().
+  return saveCloudLessonAttendance(btn);
+}
+
+
+function saveCloudLessonAttendance(btn){
+  const lesson=attendanceSelectedLesson();
+
+  if(!lesson)
+    return toast('Wybierz lekcję');
+
+  const date=$('#caDate')?.value||'';
+
+  if(!date)
+    return toast('Wybierz datę');
+
+  const teacherLocked=String(wolfSchool?.role||'').toLowerCase()==='teacher';
+
+  const teacherId=teacherLocked
     ? teachingTeacherId()
-    : ($('#caTeacher')?.value||'');
+    : (lesson.teacherId||'');
 
-  if(String(wolfSchool?.role||'').toLowerCase()==='teacher' && !teacherId){
+  if(teacherLocked&&!teacherId)
     return toast('Twoje konto nauczyciela nie jest powiązane z listą nauczycieli.');
-  }
 
-  const student=$('#caStudent')?.value||'';
-  const klass=$('#caClass')?.value||'';
+  const rows=[...document.querySelectorAll('#caLessonStudents .attendance-student-row')];
 
-  if(!student||!klass){
-    return toast('Wybierz ucznia i klasę');
-  }
+  if(!rows.length)
+    return toast('Brak uczniów do zapisania');
 
   btn.disabled=true;
-  btn.textContent='Dodaję…';
+  btn.textContent='Zapisuję…';
 
-  WolfSync.addAttendance(
-    student,
-    klass,
-    $('#caSubject')?.value||'',
-    teacherId,
-    $('#caDate')?.value||'',
-    $('#caState')?.value||'Obecny',
-    Number($('#caLesson')?.value||1)
-  );
+  rows.forEach(row=>{
+    const studentId=row.dataset.studentId||'';
+    const attendanceId=row.dataset.attendanceId||'';
+    const state=row.querySelector('.caStudentState')?.value||'Obecny';
+
+    if(!studentId)return;
+
+    WolfSync.saveAttendance(
+      attendanceId,
+      studentId,
+      lesson.classId||'',
+      lesson.subjectId||'',
+      teacherId,
+      date,
+      state,
+      Number(lesson.lesson||1)
+    );
+  });
+
+  toast(`Zapisuję frekwencję — ${rows.length} uczniów`);
 }
 
 function addAttendance(){
