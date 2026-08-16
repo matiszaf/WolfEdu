@@ -348,7 +348,7 @@ function cloudGradeForm(students,subjects,teachers){
         </select>
 
         <select id="cgWeight">
-          ${[1,2,3,4,5,6].map(v=>`<option value="${v}">Waga ${v}</option>`).join('')}
+          ${[1,2,3,4,5,6,7,8,9,10].map(v=>`<option value="${v}">Waga ${v}</option>`).join('')}
         </select>
       </div>
 
@@ -396,7 +396,7 @@ function localGradeForm(students){
         </select>
 
         <select id="gWeight">
-          ${[1,2,3,4,5,6].map(v=>`
+          ${[1,2,3,4,5,6,7,8,9,10].map(v=>`
             <option value="${v}" ${Number(editing?.weight||1)===v?'selected':''}>
               Waga ${v}
             </option>`).join('')}
@@ -520,7 +520,7 @@ function addCloudGrade(btn){
     subject,
     teacherId,
     Number($('#cgValue')?.value||0),
-    Number($('#cgWeight')?.value||1),
+    Math.max(1,Math.min(10,Number($('#cgWeight')?.value||1))),
     $('#cgCategory')?.value?.trim()||'',
     $('#cgComment')?.value?.trim()||'',
     $('#cgDate')?.value||''
@@ -532,6 +532,10 @@ function saveGrade(){
   const subject=$('#gSubject')?.value?.trim()||'';
   const value=$('#gValue')?.value||'';
   const weight=Number($('#gWeight')?.value||1);
+
+  if(!Number.isInteger(weight)||weight<1||weight>10){
+    return toast('Waga oceny musi być od 1 do 10');
+  }
   const note=$('#gNote')?.value?.trim()||'';
 
   if(!studentId||!subject){
@@ -587,6 +591,10 @@ function calculateNeededGrade(){
   const subject=$('#calcSubject')?.value||'';
   const target=Number($('#calcTarget')?.value||0);
   const newWeight=Number($('#calcWeight')?.value||1);
+
+  if(!Number.isInteger(newWeight)||newWeight<1||newWeight>10){
+    return toast('Waga musi być od 1 do 10');
+  }
   const out=$('#calcOutput');
 
   if(!sid||!subject||!target){

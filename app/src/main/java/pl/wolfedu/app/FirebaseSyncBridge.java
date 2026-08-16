@@ -650,6 +650,11 @@ public final class FirebaseSyncBridge {
     public void addGrade(String studentId, String subjectId, String teacherId, double value, int weight,
                          String category, String comment, String date) {
         FirebaseUser user = auth.getCurrentUser();
+        if (weight < 1 || weight > 10) {
+            emitSchoolError("Waga oceny musi być od 1 do 10.");
+            return;
+        }
+
         if (user == null || !hasActiveSchool()) return;
 
         Map<String, Object> payload = new HashMap<>();
