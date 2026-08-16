@@ -130,6 +130,29 @@ function planAddedLesson(change,day){
 }
 
 
+function planLessonHour(lessonNumber){
+  return (wolfSchool.lessonHours||[]).find(
+    h=>Number(h.lesson)===Number(lessonNumber)
+  )||null;
+}
+
+function applyPlanLessonHour(
+  lessonInputId,
+  startInputId,
+  endInputId
+){
+  const lessonNumber=Number($('#'+lessonInputId)?.value||0);
+  const hour=planLessonHour(lessonNumber);
+
+  if(!hour)return;
+
+  const start=$('#'+startInputId);
+  const end=$('#'+endInputId);
+
+  if(start)start.value=hour.start||'';
+  if(end)end.value=hour.end||'';
+}
+
 function planMinutes(v){
   if(!v||!/^\d{1,2}:\d{2}/.test(v))return null;
   const [h,m]=v.slice(0,5).split(':').map(Number);
@@ -483,7 +506,8 @@ function openAddedLessonEditor(classId,day){
         type="number"
         min="1"
         max="20"
-        value="${suggestedLesson}">
+        value="${suggestedLesson}"
+        onchange="applyPlanLessonHour('laLesson','laStart','laEnd')">
 
       <label>Przedmiot</label>
       <select id="laSubject">
@@ -529,6 +553,8 @@ function openAddedLessonEditor(classId,day){
 
     </div>
   </section>`;
+
+  applyPlanLessonHour('laLesson','laStart','laEnd');
 }
 
 function saveAddedLessonEditor(classId,date){
@@ -763,6 +789,149 @@ function deleteLessonChangeEditor(id){
   plan();
 }
 
+
+function lessonHoursEditorHtml(){
+  if(!canManageSchool())return '';
+
+  const hours=[...(wolfSchool.lessonHours||[])]
+    .sort((a,b)=>Number(a.lesson)-Number(b.lesson));
+
+  return `
+    <details class="plan-week">
+      <summary>
+        <div>
+          <b>Godziny lekcyjne</b>
+          <small>Domyślne godziny podpowiadane przy wyborze numeru lekcji</small>
+        </div>
+        <span>Rozwiń</span>
+      </summary>
+
+      <div class="plan-editor">
+        ${hours.length ? hours.map(h=>`
+          <div class="grid">
+            <input
+              type="number"
+              value="${esc(h.lesson)}"
+              disabled>
+
+            <input
+              type="time"
+              id="lhStart${esc(h.lesson)}"
+              value="${esc(h.start||'')}">
+
+            <input
+              type="time"
+              id="lhEnd${esc(h.lesson)}"
+              value="${esc(h.end||'')}">
+          </div>
+
+          <div class="grid">
+            <button
+              class="secondary"
+              onclick="saveExistingLessonHour(${Number(h.lesson)})">
+              Zapisz
+            </button>
+
+            <button
+              class="danger"
+              onclick="deleteExistingLessonHour(${Number(h.lesson)})">
+              Usuń
+            </button>
+          </div>
+        `).join('') : `
+          <div class="sync-note">
+            Nie ustawiono jeszcze domyślnych godzin lekcyjnych.
+          </div>
+        `}
+
+        <hr>
+
+        <b>Dodaj godzinę lekcyjną</b>
+
+        <div class="grid">
+          <input
+            id="lhLesson"
+            type="number"
+            min="1"
+            max="30"
+            placeholder="Nr lekcji">
+
+          <input
+            id="lhStart"
+            type="time">
+
+          <input
+            id="lhEnd"
+            type="time">
+        </div>
+
+        <button
+          class="btn-full"
+          onclick="addLessonHour()">
+          Dodaj / zapisz
+        </button>
+      </div>
+    </details>
+  `;
+}
+
+function addLessonHour(){
+  if(!canManageSchool())return;
+
+  const lesson=Number($('#lhLesson')?.value||0);
+  const start=$('#lhStart')?.value||'';
+  const end=$('#lhEnd')?.value||'';
+
+  if(!lesson||lesson<1)
+    return toast('Podaj numer lekcji');
+
+  if(!start||!end)
+    return toast('Podaj godzinę rozpoczęcia i zakończenia');
+
+  if(start>=end)
+    return toast('Godzina zakończenia musi być późniejsza');
+
+  WolfSync.saveLessonHour(
+    lesson,
+    start,
+    end
+  );
+
+  toast('Zapisuję godzinę lekcyjną…');
+}
+
+function saveExistingLessonHour(lesson){
+  if(!canManageSchool())return;
+
+  const start=$('#lhStart'+lesson)?.value||'';
+  const end=$('#lhEnd'+lesson)?.value||'';
+
+  if(!start||!end)
+    return toast('Podaj godzinę rozpoczęcia i zakończenia');
+
+  if(start>=end)
+    return toast('Godzina zakończenia musi być późniejsza');
+
+  WolfSync.saveLessonHour(
+    Number(lesson),
+    start,
+    end
+  );
+
+  toast('Zapisuję godzinę lekcyjną…');
+}
+
+function deleteExistingLessonHour(lesson){
+  if(!canManageSchool())return;
+
+  if(!confirm(
+    'Usunąć domyślne godziny dla lekcji '+lesson+'?'
+  ))return;
+
+  WolfSync.deleteLessonHour(Number(lesson));
+  toast('Usuwam godzinę lekcyjną…');
+}
+
 function planWeekOverview(classId){
   return `<details class="plan-week">
     <summary><div><b>Cały tydzień</b><small>Szybki podgląd liczby lekcji</small></div><span>Rozwiń</span></summary>
@@ -822,6 +991,7 @@ function plan(){
           `<div class="plan-no-lessons"><span>✓</span><b>Brak lekcji</b><small>W tym dniu nie ma zaplanowanych zajęć.</small></div>`}
         </div>
       </section>
+      ${lessonHoursEditorHtml()}
       ${planWeekOverview(selected)}
       ${canManageSchool()?`
         <button class="plan-add" onclick="openMobileLessonEditor('', '${esc(selected)}', ${selectedDay}, ${Math.max(1,lessons.length+1)})">＋ Dodaj do planu tygodniowego</button>
@@ -955,7 +1125,13 @@ function openMobileLessonEditor(id,classId,day,lesson){
   app.innerHTML=`<section class="plan-page"><div class="plan-editor">
     <div class="plan-editor-head"><div><small>WOLFCLOUD</small><h2>${existing?'Edytuj lekcję':'Dodaj lekcję'}</h2></div><button class="secondary mini" onclick="plan()">Wróć</button></div>
     <select id="mlClass">${(wolfSchool.classes||[]).map(c=>`<option value="${esc(c.id)}" ${c.id===selectedClass?'selected':''}>${esc(c.name)}</option>`).join('')}</select>
-    <div class="grid"><select id="mlDay">${days.map((d,i)=>`<option value="${i+1}" ${Number(existing?.day||day)===i+1?'selected':''}>${d}</option>`).join('')}</select><input id="mlLesson" type="number" min="1" max="20" value="${esc(existing?.lesson||lesson||1)}"></div>
+    <div class="grid"><select id="mlDay">${days.map((d,i)=>`<option value="${i+1}" ${Number(existing?.day||day)===i+1?'selected':''}>${d}</option>`).join('')}</select><input
+      id="mlLesson"
+      type="number"
+      min="1"
+      max="20"
+      value="${esc(existing?.lesson||lesson||1)}"
+      onchange="applyPlanLessonHour('mlLesson','mlStart','mlEnd')"></div>
     <select id="mlSubject"><option value="">Przedmiot</option>${(wolfSchool.subjects||[]).map(s=>`<option value="${esc(s.id)}" ${s.id===existing?.subjectId?'selected':''}>${esc(s.name)}</option>`).join('')}</select>
     <select id="mlTeacher"><option value="">Nauczyciel (opcjonalnie)</option>${(wolfSchool.teachers||[]).map(t=>`<option value="${esc(t.id)}" ${t.id===existing?.teacherId?'selected':''}>${esc(t.name)}</option>`).join('')}</select>
     <input id="mlRoom" placeholder="Sala" value="${esc(existing?.room||'')}">
@@ -978,6 +1154,10 @@ function openMobileLessonEditor(id,classId,day,lesson){
     <button class="btn-full" onclick="saveMobileCloudLesson('${esc(id||'')}')">Zapisz</button>
     ${existing?`<button class="danger btn-full" onclick="deleteMobileCloudLesson('${esc(id)}')">Usuń lekcję</button>`:''}
   </div></section>`;
+
+  if(!existing){
+    applyPlanLessonHour('mlLesson','mlStart','mlEnd');
+  }
 }
 function saveMobileCloudLesson(id){
   const classId=$('#mlClass').value,subjectId=$('#mlSubject').value;

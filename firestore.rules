@@ -387,6 +387,21 @@ service cloud.firestore {
 
 
       // =======================================================
+      // LESSON HOURS
+      // =======================================================
+
+      match /lessonHours/{docId} {
+        allow read:
+          if isMember(schoolId)
+          || isSystemAdmin();
+
+        allow create, update, delete:
+          if isAdmin(schoolId)
+          || isSystemAdmin();
+      }
+
+
+      // =======================================================
       // LESSON CHANGES
       // =======================================================
 

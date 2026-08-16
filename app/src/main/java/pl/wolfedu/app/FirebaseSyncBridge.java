@@ -44,6 +44,7 @@ public final class FirebaseSyncBridge {
     private ListenerRegistration timetableListener;
     private ListenerRegistration lessonRecordsListener;
     private ListenerRegistration lessonChangesListener;
+    private ListenerRegistration lessonHoursListener;
     private ListenerRegistration membersDirectoryListener;
     private ListenerRegistration schoolInvitesListener;
     private ListenerRegistration personalInvitesListener;
@@ -66,6 +67,7 @@ public final class FirebaseSyncBridge {
     private JSONArray schoolTimetable = new JSONArray();
     private JSONArray schoolLessonRecords = new JSONArray();
     private JSONArray schoolLessonChanges = new JSONArray();
+    private JSONArray schoolLessonHours = new JSONArray();
     private JSONArray availableSchools = new JSONArray();
     private JSONArray schoolMembers = new JSONArray();
     private JSONArray schoolInvites = new JSONArray();
@@ -468,6 +470,51 @@ public final class FirebaseSyncBridge {
                     .set(payload, SetOptions.merge())
                     .addOnFailureListener(error -> emitSchoolError(friendly(error.getMessage())));
         }
+    }
+
+    @JavascriptInterface
+    public void saveLessonHour(int lesson, String start, String end) {
+        FirebaseUser user = auth.getCurrentUser();
+
+        if (user == null || !hasActiveSchool() || !isAdminRole()) return;
+        if (lesson < 1 || lesson > 30) return;
+
+        String cleanStart = start == null ? "" : start.trim();
+        String cleanEnd = end == null ? "" : end.trim();
+
+        if (cleanStart.isBlank() || cleanEnd.isBlank()) {
+            emitSchoolError("Podaj godzinę rozpoczęcia i zakończenia.");
+            return;
+        }
+
+        Map<String, Object> payload = auditPayload(user);
+        payload.put("lesson", lesson);
+        payload.put("start", cleanStart);
+        payload.put("end", cleanEnd);
+        payload.put("updatedAt", FieldValue.serverTimestamp());
+        payload.put("updatedBy", user.getUid());
+
+        firestore.collection("schools")
+                .document(activeSchoolId)
+                .collection("lessonHours")
+                .document(String.valueOf(lesson))
+                .set(payload, SetOptions.merge())
+                .addOnFailureListener(error ->
+                        emitSchoolError(friendly(error.getMessage())));
+    }
+
+    @JavascriptInterface
+    public void deleteLessonHour(int lesson) {
+        if (!hasActiveSchool() || !isAdminRole()) return;
+        if (lesson < 1 || lesson > 30) return;
+
+        firestore.collection("schools")
+                .document(activeSchoolId)
+                .collection("lessonHours")
+                .document(String.valueOf(lesson))
+                .delete()
+                .addOnFailureListener(error ->
+                        emitSchoolError(friendly(error.getMessage())));
     }
 
     @JavascriptInterface
@@ -1023,6 +1070,7 @@ public final class FirebaseSyncBridge {
         schoolTimetable = new JSONArray();
         schoolLessonRecords = new JSONArray();
         schoolLessonChanges = new JSONArray();
+        schoolLessonHours = new JSONArray();
         schoolMembers = new JSONArray();
         schoolInvites = new JSONArray();
 
@@ -1223,6 +1271,7 @@ public final class FirebaseSyncBridge {
         });
 
         attachLessonChangesListener(schoolRef);
+        attachLessonHoursListener(schoolRef);
     }
 
     private void attachLessonChangesListener(DocumentReference schoolRef) {
@@ -1249,6 +1298,29 @@ public final class FirebaseSyncBridge {
                                     "end",
                                     "note",
                                     "version"
+                            }
+                    );
+
+                    emitSchoolState();
+                });
+    }
+
+    private void attachLessonHoursListener(DocumentReference schoolRef) {
+        lessonHoursListener = schoolRef.collection("lessonHours")
+                .addSnapshotListener((snapshot, error) -> {
+                    if (error != null) {
+                        emitSchoolError(friendly(error.getMessage()));
+                        return;
+                    }
+
+                    schoolLessonHours = snapshotToJson(
+                            snapshot == null
+                                    ? java.util.Collections.emptyList()
+                                    : snapshot.getDocuments(),
+                            new String[]{
+                                    "lesson",
+                                    "start",
+                                    "end"
                             }
                     );
 
@@ -1451,6 +1523,7 @@ public final class FirebaseSyncBridge {
             JSONArray visibleTimetable = schoolTimetable;
             JSONArray visibleLessonRecords = schoolLessonRecords;
             JSONArray visibleLessonChanges = schoolLessonChanges;
+            JSONArray visibleLessonHours = schoolLessonHours;
             JSONArray visibleMembers = schoolMembers;
             JSONArray visibleInvites = schoolInvites;
 
@@ -1464,6 +1537,7 @@ public final class FirebaseSyncBridge {
                 visibleTimetable = new JSONArray();
                 visibleLessonRecords = new JSONArray();
                 visibleLessonChanges = new JSONArray();
+                visibleLessonHours = new JSONArray();
                 visibleMembers = new JSONArray();
                 visibleInvites = new JSONArray();
             } else if (ownerOrAdmin || teacher) {
@@ -1509,6 +1583,7 @@ public final class FirebaseSyncBridge {
                 visibleTimetable = new JSONArray();
                 visibleLessonRecords = new JSONArray();
                 visibleLessonChanges = new JSONArray();
+                visibleLessonHours = new JSONArray();
                 visibleMembers = new JSONArray();
                 visibleInvites = new JSONArray();
             }
@@ -1532,6 +1607,7 @@ public final class FirebaseSyncBridge {
             visible.put("timetable", visibleTimetable);
             visible.put("lessonRecords", visibleLessonRecords);
             visible.put("lessonChanges", visibleLessonChanges);
+            visible.put("lessonHours", visibleLessonHours);
             visible.put("members", visibleMembers);
             visible.put("invites", visibleInvites);
             visible.put("myInvites", myInvites);
@@ -1557,9 +1633,9 @@ public final class FirebaseSyncBridge {
     }
 
     private void stopActiveSchoolListeners() {
-        ListenerRegistration[] regs = {schoolListener, memberListener, classesListener, subjectsListener, teachersListener, studentsListener, gradesListener, tasksListener, attendanceListener, timetableListener, lessonRecordsListener, lessonChangesListener, parentsListener};
+        ListenerRegistration[] regs = {schoolListener, memberListener, classesListener, subjectsListener, teachersListener, studentsListener, gradesListener, tasksListener, attendanceListener, timetableListener, lessonRecordsListener, lessonChangesListener, lessonHoursListener, parentsListener};
         for (ListenerRegistration reg : regs) if (reg != null) reg.remove();
-        schoolListener = memberListener = classesListener = subjectsListener = teachersListener = studentsListener = gradesListener = tasksListener = attendanceListener = timetableListener = lessonRecordsListener = lessonChangesListener = parentsListener = null;
+        schoolListener = memberListener = classesListener = subjectsListener = teachersListener = studentsListener = gradesListener = tasksListener = attendanceListener = timetableListener = lessonRecordsListener = lessonChangesListener = lessonHoursListener = parentsListener = null;
         stopAdminListeners();
     }
 
