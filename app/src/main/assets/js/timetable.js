@@ -136,6 +136,56 @@ function planLessonHour(lessonNumber){
   )||null;
 }
 
+function planLessonNumberOptions(selected,max=20){
+  const selectedNumber=Number(selected);
+
+  let hours=[...(wolfSchool.lessonHours||[])]
+    .filter(h=>{
+      const n=Number(h.lesson);
+      return Number.isInteger(n) && n>=0 && n<=max;
+    })
+    .sort((a,b)=>Number(a.lesson)-Number(b.lesson));
+
+  // Jeśli szkoła nie ustawiła jeszcze godzin, zachowujemy możliwość
+  // wyboru numeru 0-max.
+  if(!hours.length){
+    hours=Array.from({length:max+1},(_,lesson)=>({
+      lesson,
+      start:'',
+      end:''
+    }));
+  }
+
+  // Istniejąca lekcja może mieć numer, którego nie ma już w lessonHours.
+  if(
+    Number.isInteger(selectedNumber) &&
+    selectedNumber>=0 &&
+    selectedNumber<=max &&
+    !hours.some(h=>Number(h.lesson)===selectedNumber)
+  ){
+    hours.push({
+      lesson:selectedNumber,
+      start:'',
+      end:''
+    });
+
+    hours.sort((a,b)=>Number(a.lesson)-Number(b.lesson));
+  }
+
+  return hours.map(h=>{
+    const n=Number(h.lesson);
+    const time=h.start
+      ? ` — ${h.start}${h.end?'–'+h.end:''}`
+      : '';
+
+    return `<option
+      value="${n}"
+      ${n===selectedNumber?'selected':''}>
+      ${n}${esc(time)}
+    </option>`;
+  }).join('');
+}
+
 function applyPlanLessonHour(
   lessonInputId,
   startInputId,
@@ -478,10 +528,22 @@ function openAddedLessonEditor(classId,day){
   const date=planDateForDay(day);
   const lessons=planClassLessons(classId,day);
 
-  const suggestedLesson=Math.max(
-    1,
-    ...lessons.map(l=>Number(l.lesson||0))
-  )+1;
+  const existingNumbers=lessons
+    .map(l=>Number(l.lesson))
+    .filter(Number.isInteger);
+
+  const configuredNumbers=(wolfSchool.lessonHours||[])
+    .map(h=>Number(h.lesson))
+    .filter(Number.isInteger)
+    .sort((a,b)=>a-b);
+
+  const suggestedLesson=configuredNumbers.find(
+    n=>!existingNumbers.includes(n)
+  ) ?? (
+    existingNumbers.length
+      ? Math.max(...existingNumbers)+1
+      : (configuredNumbers[0] ?? 0)
+  );
 
   app.innerHTML=`<section class="plan-page">
     <div class="plan-editor">
@@ -501,13 +563,11 @@ function openAddedLessonEditor(classId,day){
       </div>
 
       <label>Numer lekcji</label>
-      <input
+      <select
         id="laLesson"
-        type="number"
-        min="1"
-        max="20"
-        value="${suggestedLesson}"
         onchange="applyPlanLessonHour('laLesson','laStart','laEnd')">
+        ${planLessonNumberOptions(suggestedLesson,20)}
+      </select>
 
       <label>Przedmiot</label>
       <select id="laSubject">
@@ -568,7 +628,7 @@ function saveAddedLessonEditor(classId,date){
   const end=$('#laEnd').value;
   const note=$('#laNote').value.trim();
 
-  if(!lessonNumber||lessonNumber<1)
+  if(!Number.isInteger(lessonNumber)||lessonNumber<0)
     return toast('Podaj numer lekcji');
 
   if(!subjectId)
@@ -633,7 +693,7 @@ function openLessonChangeEditor(baseId,classId,day,lessonNumber){
         <b>${esc(date)}</b>
 
         <small>LEKCJA</small>
-        <b>${esc(base.lesson||lessonNumber)}. ${esc(planSubject(base))}</b>
+        <b>${esc(base.lesson ?? lessonNumber)}. ${esc(planSubject(base))}</b>
       </div>
 
       <label>Rodzaj zmiany</label>
@@ -681,7 +741,7 @@ function openLessonChangeEditor(baseId,classId,day,lessonNumber){
             <input
               id="lcStart"
               type="time"
-              value="${esc(existing?.start||'')}">
+              value="${esc(existing?.start || actual?.start || base?.start || '')}">
           </div>
 
           <div>
@@ -689,7 +749,7 @@ function openLessonChangeEditor(baseId,classId,day,lessonNumber){
             <input
               id="lcEnd"
               type="time"
-              value="${esc(existing?.end||'')}">
+              value="${esc(existing?.end || actual?.end || base?.end || '')}">
           </div>
         </div>
 
@@ -852,7 +912,7 @@ function lessonHoursEditorHtml(){
           <input
             id="lhLesson"
             type="number"
-            min="1"
+            min="0"
             max="30"
             placeholder="Nr lekcji">
 
@@ -882,7 +942,7 @@ function addLessonHour(){
   const start=$('#lhStart')?.value||'';
   const end=$('#lhEnd')?.value||'';
 
-  if(!lesson||lesson<1)
+  if(!Number.isInteger(lesson)||lesson<0)
     return toast('Podaj numer lekcji');
 
   if(!start||!end)
@@ -1125,13 +1185,11 @@ function openMobileLessonEditor(id,classId,day,lesson){
   app.innerHTML=`<section class="plan-page"><div class="plan-editor">
     <div class="plan-editor-head"><div><small>WOLFCLOUD</small><h2>${existing?'Edytuj lekcję':'Dodaj lekcję'}</h2></div><button class="secondary mini" onclick="plan()">Wróć</button></div>
     <select id="mlClass">${(wolfSchool.classes||[]).map(c=>`<option value="${esc(c.id)}" ${c.id===selectedClass?'selected':''}>${esc(c.name)}</option>`).join('')}</select>
-    <div class="grid"><select id="mlDay">${days.map((d,i)=>`<option value="${i+1}" ${Number(existing?.day||day)===i+1?'selected':''}>${d}</option>`).join('')}</select><input
+    <div class="grid"><select id="mlDay">${days.map((d,i)=>`<option value="${i+1}" ${Number(existing?.day||day)===i+1?'selected':''}>${d}</option>`).join('')}</select><select
       id="mlLesson"
-      type="number"
-      min="1"
-      max="20"
-      value="${esc(existing?.lesson||lesson||1)}"
-      onchange="applyPlanLessonHour('mlLesson','mlStart','mlEnd')"></div>
+      onchange="applyPlanLessonHour('mlLesson','mlStart','mlEnd')">
+      ${planLessonNumberOptions(existing?.lesson ?? lesson ?? 1,20)}
+    </select></div>
     <select id="mlSubject"><option value="">Przedmiot</option>${(wolfSchool.subjects||[]).map(s=>`<option value="${esc(s.id)}" ${s.id===existing?.subjectId?'selected':''}>${esc(s.name)}</option>`).join('')}</select>
     <select id="mlTeacher"><option value="">Nauczyciel (opcjonalnie)</option>${(wolfSchool.teachers||[]).map(t=>`<option value="${esc(t.id)}" ${t.id===existing?.teacherId?'selected':''}>${esc(t.name)}</option>`).join('')}</select>
     <input id="mlRoom" placeholder="Sala" value="${esc(existing?.room||'')}">

@@ -477,7 +477,7 @@ public final class FirebaseSyncBridge {
         FirebaseUser user = auth.getCurrentUser();
 
         if (user == null || !hasActiveSchool() || !isAdminRole()) return;
-        if (lesson < 1 || lesson > 30) return;
+        if (lesson < 0 || lesson > 30) return;
 
         String cleanStart = start == null ? "" : start.trim();
         String cleanEnd = end == null ? "" : end.trim();
@@ -506,7 +506,7 @@ public final class FirebaseSyncBridge {
     @JavascriptInterface
     public void deleteLessonHour(int lesson) {
         if (!hasActiveSchool() || !isAdminRole()) return;
-        if (lesson < 1 || lesson > 30) return;
+        if (lesson < 0 || lesson > 30) return;
 
         firestore.collection("schools")
                 .document(activeSchoolId)
@@ -526,7 +526,7 @@ public final class FirebaseSyncBridge {
         if (user == null || !hasActiveSchool() || !isAdminRole()) return;
         if (date == null || date.isBlank()) return;
         if (classId == null || classId.isBlank()) return;
-        if (lesson < 1) return;
+        if (lesson < 0) return;
 
         String cleanType = type == null ? "" : type.trim().toLowerCase();
 
@@ -730,7 +730,7 @@ public final class FirebaseSyncBridge {
         if (studentId == null || studentId.isBlank()) return;
         if (classId == null || classId.isBlank()) return;
         if (date == null || date.isBlank()) return;
-        if (lesson < 1) return;
+        if (lesson < 0) return;
 
         Map<String, Object> payload = new HashMap<>();
         payload.put("studentId", studentId.trim());
